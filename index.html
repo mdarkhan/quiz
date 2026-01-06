@@ -491,8 +491,6 @@
             selectedLecture: null,
             filter: 'seerat',
             search: '',
-            playerMode: 'embed',
-            playbackRate: 1.0,
             
             // Quiz State
             quiz: {
@@ -515,14 +513,6 @@
             const match = (typeof url === 'string' ? url : "").match(/\/d\/(.+)\//);
             if (match && match[1]) {
                 return `https://drive.google.com/file/d/${match[1]}/preview`;
-            }
-            return url;
-        };
-
-        const getDriveDirectLink = (url) => {
-            const match = (typeof url === 'string' ? url : "").match(/\/d\/(.+)\//);
-            if (match && match[1]) {
-                return `https://drive.google.com/uc?export=download&id=${match[1]}`;
             }
             return url;
         };
@@ -583,9 +573,17 @@
             // Re-initialize icons
             lucide.createIcons();
             
-            // Restore state interactions
-            const audioEl = document.getElementById('audioPlayer');
-            if(audioEl) audioEl.playbackRate = state.playbackRate;
+            // Re-attach event listeners (since innerHTML wipes them)
+            attachListeners();
+            
+            // Restore search focus if on home
+            if(state.view === 'home') {
+                const searchInput = document.getElementById('searchInput');
+                if(searchInput) {
+                    searchInput.value = state.search;
+                    if(document.activeElement?.id === 'searchInput') searchInput.focus();
+                }
+            }
         }
 
         function renderHeader() {
@@ -722,6 +720,17 @@
             `;
         }
 
+        function renderEmptyState() {
+            return `
+            <div class="col-span-full text-center py-20 opacity-50">
+                <div class="inline-block p-4 rounded-full bg-gray-100 dark:bg-slate-800 mb-2">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </div>
+                <p>${TEXTS.noResults}</p>
+            </div>
+            `;
+        }
+
         function renderDetail() {
             const l = state.selectedLecture;
             const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
@@ -731,8 +740,6 @@
                 : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
             
             const playerBg = state.darkMode ? 'bg-slate-900' : 'bg-stone-50';
-            const toggleActive = 'bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400';
-            const toggleInactive = 'text-slate-500 dark:text-slate-400 hover:text-slate-700';
 
             const resourcesHTML = l.content.resources.length > 0 
                 ? `<ul class="space-y-2">` + l.content.resources.map(res => `
@@ -781,38 +788,13 @@
 
                         <!-- Player Area -->
                         <div class="p-4 rounded-xl mb-8 flex flex-col items-center justify-center gap-4 ${playerBg}">
-                            <div class="flex gap-2 bg-slate-200 dark:bg-slate-800 p-1 rounded-lg mb-4">
-                                <button onclick="actions.setPlayerMode('embed')" class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${state.playerMode === 'embed' ? toggleActive : toggleInactive}">
-                                    <i data-lucide="wifi" class="w-4 h-4"></i> সাধারণ প্লেয়ার
-                                </button>
-                                <button onclick="actions.setPlayerMode('direct')" class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${state.playerMode === 'direct' ? toggleActive : toggleInactive}">
-                                    <i data-lucide="gauge" class="w-4 h-4"></i> স্পিড কন্ট্রোল
-                                </button>
-                            </div>
-
                             <div class="w-full flex flex-col items-center text-center gap-2">
-                                ${state.playerMode === 'embed' ? `
-                                    <div class="w-full max-w-2xl bg-emerald-900 rounded-lg overflow-hidden shadow-lg relative animate-fade-in">
-                                        <div class="p-2 text-center text-xs text-white/70 bg-emerald-800/50">
-                                           <i data-lucide="info" class="w-3 h-3 inline mr-1"></i> গুগল ড্রাইভের বড় ফাইলের ক্ষেত্রে "Virus Scan Warning" দেখানো স্বাভাবিক।
-                                        </div>
-                                        <iframe src="${getDriveEmbedLink(l.driveLink)}" class="w-full h-[120px] border-0" allow="autoplay" loading="lazy" title="Audio Player"></iframe>
+                                <div class="w-full max-w-2xl bg-emerald-900 rounded-lg overflow-hidden shadow-lg relative animate-fade-in">
+                                    <div class="p-2 text-center text-xs text-white/70 bg-emerald-800/50">
+                                        <i data-lucide="info" class="w-3 h-3 inline mr-1"></i> গুগল ড্রাইভের বড় ফাইলের ক্ষেত্রে "Virus Scan Warning" দেখানো স্বাভাবিক।
                                     </div>
-                                ` : `
-                                    <div class="w-full max-w-md animate-fade-in">
-                                        <div class="p-4 rounded-lg mb-3 text-sm flex items-start gap-2 text-left ${state.darkMode ? 'bg-amber-900/20 text-amber-200' : 'bg-amber-50 text-amber-800'}">
-                                            <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 shrink-0"></i>
-                                            <p>এই প্লেয়ারে সমস্যা হলে "সাধারণ প্লেয়ার" ব্যবহার করুন।</p>
-                                        </div>
-                                        <audio id="audioPlayer" controls class="w-full mb-4" src="${getDriveDirectLink(l.driveLink)}"></audio>
-                                        <div class="flex items-center justify-center gap-2">
-                                            <span class="text-xs font-bold uppercase tracking-wider opacity-60">Speed:</span>
-                                            ${[1.0, 1.25, 1.5, 2.0].map(rate => `
-                                                <button onclick="actions.setSpeed(${rate})" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.playbackRate === rate ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}">${rate}x</button>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `}
+                                    <iframe src="${getDriveEmbedLink(l.driveLink)}" class="w-full h-[120px] border-0" allow="autoplay" loading="lazy" title="Audio Player"></iframe>
+                                </div>
                                 <div class="flex flex-col items-center gap-2 mt-6 border-t border-dashed border-gray-500/30 w-full max-w-md pt-4 opacity-80">
                                     <a href="${l.driveLink}" target="_blank" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full font-medium transition-transform active:scale-95 shadow-lg shadow-emerald-500/30">
                                         <i data-lucide="play" class="w-4 h-4" fill="currentColor"></i> ${TEXTS.playOnDrive} / ${TEXTS.download}
@@ -1018,19 +1000,8 @@
             selectLecture: (id) => {
                 state.selectedLecture = COURSE_DATA.find(l => l.id === id);
                 state.view = 'detail';
-                state.playerMode = 'embed';
                 state.playbackRate = 1.0;
                 window.scrollTo(0,0);
-                render();
-            },
-            setPlayerMode: (mode) => {
-                state.playerMode = mode;
-                render();
-            },
-            setSpeed: (rate) => {
-                state.playbackRate = rate;
-                const audio = document.getElementById('audioPlayer');
-                if(audio) audio.playbackRate = rate;
                 render();
             },
             // QUIZ ACTIONS

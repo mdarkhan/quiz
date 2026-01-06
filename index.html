@@ -501,7 +501,8 @@
                 score: 0,
                 selectedOption: null, // index
                 isAnswerChecked: false,
-                isFinished: false
+                isFinished: false,
+                questions: [] // Will hold shuffled questions
             }
         };
 
@@ -854,8 +855,7 @@
 
         function renderQuiz() {
             const qState = state.quiz;
-            const lecture = state.selectedLecture;
-            const quizData = lecture.quiz;
+            const quizData = qState.questions; // Use shuffled questions
             const currentQ = quizData[qState.currentQuestion];
 
             const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
@@ -1035,20 +1035,28 @@
             },
             // QUIZ ACTIONS
             startQuiz: () => {
+                // Clone and shuffle questions
+                const questions = [...state.selectedLecture.quiz];
+                for (let i = questions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [questions[i], questions[j]] = [questions[j], questions[i]];
+                }
+
                 state.quiz = {
                     active: true,
                     currentQuestion: 0,
                     score: 0,
                     selectedOption: null,
                     isAnswerChecked: false,
-                    isFinished: false
+                    isFinished: false,
+                    questions: questions
                 };
                 state.view = 'quiz';
                 render();
             },
             checkAnswer: (optionIndex) => {
                 const qState = state.quiz;
-                const currentQ = state.selectedLecture.quiz[qState.currentQuestion];
+                const currentQ = qState.questions[qState.currentQuestion];
                 
                 qState.selectedOption = optionIndex;
                 qState.isAnswerChecked = true;
@@ -1060,7 +1068,7 @@
             },
             nextQuestion: () => {
                 const qState = state.quiz;
-                const total = state.selectedLecture.quiz.length;
+                const total = qState.questions.length;
                 
                 if (qState.currentQuestion < total - 1) {
                     qState.currentQuestion++;

@@ -49,14 +49,15 @@
         .animate-fade-in {
             animation: fade-in 0.4s ease-out forwards;
         }
+        /* Fixed Marquee Animation */
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            100% { transform: translateX(-33.3333%); } /* Exact 1/3rd for 3 items */
         }
         .animate-marquee {
             display: flex;
-            white-space: nowrap;
-            animation: marquee 8s linear infinite;
+            width: max-content; /* Width depends on content, not screen */
+            animation: marquee 25s linear infinite; /* Constant speed */
         }
         .animate-marquee:hover {
             animation-play-state: paused;
@@ -617,21 +618,19 @@
             const colors = state.darkMode ? 'bg-emerald-900 text-emerald-100 border-emerald-800' : 'bg-emerald-600 text-white border-emerald-700';
             return `
             <div class="w-full overflow-hidden py-3 shadow-md relative z-10 border-b ${colors}">
-                <div class="animate-marquee flex items-center gap-4 w-full">
-                    <div class="flex items-center gap-4 shrink-0">
-                        <span class="font-extrabold flex items-center gap-2 px-4"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
+                <div class="animate-marquee flex items-center">
+                    <!-- 3 Identical Copies for Seamless Loop -->
+                    <div class="flex items-center shrink-0 px-8">
+                        <span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
                         <span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span>
-                        <span class="mx-10 opacity-50">|</span>
                     </div>
-                     <div class="flex items-center gap-4 shrink-0">
-                        <span class="font-extrabold flex items-center gap-2 px-4"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
+                     <div class="flex items-center shrink-0 px-8">
+                        <span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
                         <span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span>
-                        <span class="mx-10 opacity-50">|</span>
                     </div>
-                     <div class="flex items-center gap-4 shrink-0">
-                        <span class="font-extrabold flex items-center gap-2 px-4"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
+                     <div class="flex items-center shrink-0 px-8">
+                        <span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span>
                         <span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span>
-                        <span class="mx-10 opacity-50">|</span>
                     </div>
                 </div>
             </div>

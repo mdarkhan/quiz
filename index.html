@@ -86,8 +86,7 @@
          * CONFIGURATION & DATA
          * ==================================================================================
          */
-        const GLOBAL_NOTICE = `দারসের আলোচনা আর "সীরাত পাঠ" বইয়ের ১৫ থেকে ৪৫ পৃষ্ঠার মধ্যে পরবর্তী পরীক্ষা হবে ইনশা আল্লাহু তা'আলা।`;
-
+        
         const COURSE_DATA = [
             {
                 id: 1,
@@ -445,8 +444,36 @@
                     resources: []
                 },
                 quiz: []
+            },
+            {
+                id: 4,
+                date: "2026-01-09",
+                duration: "1 hr 55 min",
+                category: "seerat",
+                driveLink: "https://drive.google.com/file/d/1ZDWo-M7Ai0EFPyO2sF19OV7X38yDWDOk/view?usp=sharing",
+                content: {
+                    title: "সীরাত-০২ঃ সীরাত সংরক্ষণ ও আরব জাতির ইতিহাস",
+                    description: "সীরাত সংরক্ষণের বৈজ্ঞানিক পদ্ধতি, আরবের ভৌগোলিক গুরুত্ব এবং ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর ইতিহাস।",
+                    summary: [
+                        "সীরাত সংরক্ষণের ইতিহাস ও নির্ভরযোগ্যতা (কুরআন, সুন্নাহ, সনদ)",
+                        "আরব উপদ্বীপের ভৌগোলিক ও কৌশলগত গুরুত্ব",
+                        "আরব জাতির শ্রেণিবিভাগ (আরাবে বাইদাহ, আরিবাহ, মুস্তারিবাহ)",
+                        "ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর মক্কায় আগমন ও কাবা নির্মাণ",
+                        "আরবে মূর্তিপূজার সূচনা ও জাহেলিয়াতের প্রেক্ষাপট"
+                    ],
+                    syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২১ থেকে ২৬ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`,
+                    resources: []
+                },
+                quiz: []
             }
         ];
+
+        // DYNAMIC NOTICE LOGIC
+        // Get the syllabus from the very last lecture in the list that has a syllabus
+        const latestLectureWithSyllabus = [...COURSE_DATA].reverse().find(l => l.content.syllabus);
+        const GLOBAL_NOTICE = latestLectureWithSyllabus 
+            ? latestLectureWithSyllabus.content.syllabus 
+            : "আসসালামু আলাইকুম। নিয়মিত ক্লাস ও কুইজে অংশগ্রহণ করুন।";
 
         const TEXTS = {
             siteTitle: "মাসউদ আলিমী",

@@ -484,7 +484,8 @@
             time: "জমার সময়",   
             submissionSerial: "জমার ক্রম", 
             timeTaken: "গৃহীত সময়", // New Text
-            viewLeaderboard: "মেধাতালিকা দেখুন"
+            viewLeaderboard: "মেধাতালিকা দেখুন",
+            goHome: "হোমপেজে ফিরে যান"
         };
 
         const latestLectureWithSyllabus = [...COURSE_DATA].reverse().find(l => l.content.syllabus);
@@ -514,7 +515,7 @@
                 startTime: null, // New
                 endTime: null,   // New
                 timerInterval: null, // New
-                timeLeft: 120 // 2 minutes in seconds
+                timeLeft: 3600 // time in seconds
             },
             leaderboardData: []
         };
@@ -969,6 +970,13 @@
                         <div class="w-10"></div> 
                     </div>
 
+                    <!-- ADDED GO HOME BUTTON AT TOP FOR CONVENIENCE -->
+                    <div class="max-w-3xl mx-auto p-4 flex justify-end">
+                        <button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center gap-2">
+                            <i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}
+                        </button>
+                    </div>
+
                     <div class="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
                         ${quizData.map((q, idx) => {
                             const userAnswers = qState.userAnswers[idx] || [];
@@ -1093,17 +1101,26 @@
                             <p class="text-lg font-medium leading-relaxed">"${message}"</p>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-3 w-full">
-                            <!-- Show Leaderboard Button -->
-                            <button onclick="actions.viewLeaderboard()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <!-- Modified Buttons Layout -->
+                        <div class="flex flex-col gap-3 w-full">
+                            <!-- Show Leaderboard Button in Middle -->
+                            <button onclick="actions.viewLeaderboard()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}
                             </button>
                             
-                            <!-- Show Answer Button -->
-                            <button onclick="actions.reviewQuizAnswers()" class="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i data-lucide="list-checks" class="w-5 h-5"></i> উত্তর দেখুন
-                            </button>
+                            <div class="grid grid-cols-2 gap-3 mt-2">
+                                <!-- Show Answer Button -->
+                                <button onclick="actions.reviewQuizAnswers()" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                    <i data-lucide="list-checks" class="w-5 h-5"></i> উত্তর দেখুন
+                                </button>
+                                
+                                <!-- Go Home Button -->
+                                <button onclick="actions.goHome()" class="py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 font-bold transition flex items-center justify-center gap-2">
+                                    <i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}
+                                </button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
                 `;
@@ -1217,6 +1234,13 @@
                     <div class="w-10"></div> 
                 </div>
 
+                <!-- ADDED GO HOME BUTTON AT TOP OF LEADERBOARD -->
+                <div class="max-w-4xl mx-auto px-4 md:px-8 pt-4 flex justify-end">
+                    <button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center gap-2">
+                        <i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}
+                    </button>
+                </div>
+
                 <div class="container mx-auto p-4 md:p-8 max-w-4xl">
                     <div class="rounded-2xl overflow-hidden border ${state.darkMode ? 'border-slate-700' : 'border-stone-200'} shadow-lg">
                         <div class="overflow-x-auto">
@@ -1265,6 +1289,21 @@
                                             durationText = `${toBanglaDigit(min)} মি ${toBanglaDigit(sec)} সে`;
                                         }
 
+                                        // Date and Time formatting
+                                        const dateObj = new Date(user.timestamp);
+                                        const dateStr = dateObj.toLocaleString('bn-BD', { 
+                                            day: '2-digit', 
+                                            month: '2-digit', 
+                                            year: 'numeric'
+                                        }).replace(/\//g, '-');
+                                        
+                                        const timeStr = dateObj.toLocaleString('bn-BD', {
+                                            hour: 'numeric',
+                                            minute: 'numeric',
+                                            second: 'numeric',
+                                            hour12: true
+                                        });
+
                                         return `
                                         <tr class="${rowClass}">
                                             <td class="p-4 text-center align-middle">${rankDisplay}</td>
@@ -1287,11 +1326,10 @@
                                                 ${durationText}
                                             </td>
                                             <td class="p-4 text-center align-middle text-sm opacity-60 hidden sm:table-cell">
-                                                ${new Date(user.timestamp).toLocaleString('bn-BD', { 
-                                                    day: '2-digit', 
-                                                    month: '2-digit', 
-                                                    year: 'numeric'
-                                                }).replace(/\//g, '-')}
+                                                <div class="flex flex-col items-center">
+                                                    <span class="font-bold">${dateStr}</span>
+                                                    <span class="text-xs opacity-70">${timeStr}</span>
+                                                </div>
                                             </td>
                                         </tr>
                                         `;

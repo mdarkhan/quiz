@@ -288,7 +288,7 @@
             name: "নাম",
             score: "নম্বর",
             time: "সময়",
-            submissionSerial: "জমার সিরিয়াল", 
+            submissionSerial: "জমার ক্রম", // CHANGED from জমার সিরিয়াল
             viewLeaderboard: "মেধাতালিকা দেখুন"
         };
 
@@ -990,7 +990,8 @@
                                 <thead>
                                     <!-- Changed text-xs to text-base for bigger font -->
                                     <tr class="${state.darkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-600 text-white'} uppercase text-base font-bold tracking-wider">
-                                        <th class="p-4 w-16 text-center">#</th>
+                                        <!-- Changed # to মেধাস্থান -->
+                                        <th class="p-4 w-20 text-center">মেধাস্থান</th>
                                         <th class="p-4">${TEXTS.name}</th>
                                         <!-- Swapped Score and Submission Serial -->
                                         <th class="p-4 text-center">${TEXTS.score}</th>
@@ -1000,31 +1001,55 @@
                                 </thead>
                                 <tbody>
                                     ${state.leaderboardData.length > 0 ? state.leaderboardData.map((user, idx) => {
-                                        let rankDisplay = `<span class="font-bold opacity-50">#${toBanglaDigit(idx + 1)}</span>`;
-                                        if (idx === 0) rankDisplay = `<i data-lucide="crown" class="w-6 h-6 text-yellow-400 mx-auto fill-current"></i>`;
-                                        if (idx === 1) rankDisplay = `<i data-lucide="medal" class="w-6 h-6 text-gray-300 mx-auto fill-current"></i>`;
-                                        if (idx === 2) rankDisplay = `<i data-lucide="medal" class="w-6 h-6 text-amber-600 mx-auto fill-current"></i>`;
+                                        // Rank Badge Logic for Top 5
+                                        let rankDisplay = `<span class="font-bold opacity-50 text-xl">${toBanglaDigit(idx + 1)}</span>`;
+                                        
+                                        if (idx === 0) { // 1st - Gold Crown
+                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="crown" class="w-8 h-8 text-yellow-500 fill-yellow-500 animate-bounce"></i><span class="text-[10px] font-bold text-yellow-600 uppercase">১ম</span></div>`;
+                                        } else if (idx === 1) { // 2nd - Silver Medal
+                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-slate-400 fill-slate-300"></i><span class="text-[10px] font-bold text-slate-500 uppercase">২য়</span></div>`;
+                                        } else if (idx === 2) { // 3rd - Bronze Medal
+                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-amber-700 fill-amber-600"></i><span class="text-[10px] font-bold text-amber-800 uppercase">৩য়</span></div>`;
+                                        } else if (idx === 3) { // 4th - Emerald Badge
+                                            rankDisplay = `<div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto text-sm font-bold shadow-md ring-2 ring-emerald-200">৪</div>`;
+                                        } else if (idx === 4) { // 5th - Teal Badge
+                                            rankDisplay = `<div class="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center mx-auto text-sm font-bold shadow-md ring-2 ring-teal-200">৫</div>`;
+                                        }
+
+                                        // Background highlight for top 3
+                                        let rowClass = `border-b last:border-0 border-gray-200 dark:border-gray-700 ${idx % 2 === 0 ? rowEven : rowOdd} hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors`;
+                                        if (idx === 0) rowClass += " bg-yellow-50/50 dark:bg-yellow-900/10";
+                                        else if (idx === 1) rowClass += " bg-slate-50/50 dark:bg-slate-900/20";
+                                        else if (idx === 2) rowClass += " bg-amber-50/50 dark:bg-amber-900/10";
 
                                         return `
-                                        <tr class="border-b last:border-0 border-gray-200 dark:border-gray-700 ${idx % 2 === 0 ? rowEven : rowOdd} hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                                        <tr class="${rowClass}">
                                             <td class="p-4 text-center align-middle">${rankDisplay}</td>
                                             <td class="p-4 align-middle">
                                                 <div class="font-bold text-base md:text-lg">${user.name}</div>
-                                                <div class="text-xs opacity-60">অভিভাবক: ${user.guardian || '-'}</div>
+                                                <div class="text-xs opacity-60">${user.guardian || '-'}</div>
                                             </td>
-                                            <!-- Swapped Body Columns with Bigger Fonts & Bangla Digits -->
+                                            <!-- Swapped Body Columns -->
                                             <td class="p-4 text-center align-middle">
                                                 <span class="inline-block px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-extrabold text-2xl shadow-sm">
                                                     ${toBanglaDigit(user.score)}
                                                 </span>
                                             </td>
                                             <td class="p-4 text-center align-middle">
-                                                <span class="inline-block px-4 py-2 rounded bg-gray-100 dark:bg-slate-700 text-xl font-bold opacity-70">
+                                                <span class="font-bold text-base md:text-lg opacity-70">
                                                     ${toBanglaDigit(user.submissionSerial || '-')}
                                                 </span>
                                             </td>
                                             <td class="p-4 text-right align-middle text-sm opacity-60 hidden sm:table-cell">
-                                                ${new Date(user.timestamp).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                ${new Date(user.timestamp).toLocaleString('bn-BD', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric', 
+                                                    hour: 'numeric', 
+                                                    minute: 'numeric', 
+                                                    second: 'numeric',
+                                                    hour12: true 
+                                                })}
                                             </td>
                                         </tr>
                                         `;

@@ -593,29 +593,27 @@
             const hijriMonths = ["মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জুমাদাল উলা", "জুমাদাস সানি", "রজব", "শা‘বান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
             
             const hParts = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(date);
-            const hDayEn = hParts.find(p => p.type === 'day')?.value;
-            const hMonthIndex = parseInt(hParts.find(p => p.type === 'month')?.value) - 1; 
-            const hYearEn = hParts.find(p => p.type === 'year')?.value.replace(/[^0-9]/g, ''); // Remove 'AH'
-
-            const hDay = toBanglaDigit(hDayEn);
-            const hMonth = hijriMonths[hMonthIndex] || "হিজরি মাস"; // Fallback
-            const hYear = toBanglaDigit(hYearEn);
+            // --- HIJRI & ENGLISH USING INTL ---
+            // Format to parts to manually control the output (No 'Era' or 'Jug')
+            const hijriParts = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(date);
+            const hDay = hijriParts.find(p => p.type === 'day')?.value;
+            const hMonth = hijriParts.find(p => p.type === 'month')?.value;
+            const hYear = hijriParts.find(p => p.type === 'year')?.value;
             
-            // --- ENGLISH DATE ---
             const enFormatter = new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
             const enString = enFormatter.format(date);
 
             return `
-            <div class="w-full md:w-auto text-center md:text-left flex flex-col items-center md:items-start relative z-10 pl-2">
+            <div class="w-full md:w-auto flex flex-col items-center relative z-10">
                 
                 <!-- Hijri (Primary) -->
-                <div class="flex items-center justify-center md:justify-start gap-5 mb-6">
-                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">${hDay}</span>
+                <div class="flex items-center justify-center gap-5 mb-5">
+                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none text-right w-[80px]">${hDay}</span>
                     
-                    <!-- Vertical Divider matching bottom one -->
-                    <div class="w-px h-16 bg-emerald-200 dark:bg-emerald-800 hidden md:block"></div>
+                    <!-- Vertical Divider -->
+                    <div class="w-px h-16 bg-emerald-200 dark:bg-emerald-800"></div>
                     
-                    <div class="flex flex-col items-start text-left justify-center">
+                    <div class="flex flex-col items-start text-left justify-center w-[130px]">
                         <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">আজকের তারিখ</span>
                         <span class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 leading-none mb-1">${hMonth}</span>
                         <span class="text-lg font-semibold text-slate-500 dark:text-slate-400 leading-none">${hYear} হিজরি</span>
@@ -623,16 +621,18 @@
                 </div>
 
                 <!-- Secondary Dates (Side by Side) -->
-                <div class="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4 w-full">
-                    <div>
+                <div class="flex items-center justify-center gap-6 w-full">
+                    <div class="text-right w-[110px]">
                         <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">
                             ${bnString.split(' ')[0]} ${bnString.split(' ')[1]}
                         </div>
                         <div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${bnString.split(' ')[2]} বঙ্গাব্দ</div>
                     </div>
-                    <!-- Vertical Divider for Desktop -->
-                    <div class="w-px bg-slate-200 dark:bg-slate-700 h-10 self-center hidden md:block"></div>
-                    <div>
+                    
+                    <!-- Vertical Divider (Aligned with top) -->
+                    <div class="w-px bg-slate-200 dark:bg-slate-700 h-10"></div>
+                    
+                    <div class="text-left w-[110px]">
                         <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">
                             ${enString.split(' ')[0]} ${enString.split(' ')[1]}
                         </div>
@@ -762,29 +762,27 @@
             return `
             <main class="container mx-auto px-4 py-4 md:py-6 min-h-[calc(100vh-140px)] animate-fade-in">
                 
-                <div class="rounded-3xl p-5 md:p-6 border mb-6 ${heroBg} relative overflow-hidden">
+                <div class="rounded-3xl p-6 border mb-6 ${heroBg} relative overflow-hidden">
                     
-                    <div class="flex flex-col-reverse md:flex-row items-center gap-6 md:gap-10 relative z-10">
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 relative z-10">
                         
-                        <!-- Left: Calendar Widget (No Card) -->
-                        <div class="w-full md:w-auto shrink-0 flex justify-center md:justify-start border-t md:border-t-0 md:border-r border-slate-200 dark:border-slate-800 pt-4 md:pt-0 md:pr-8 mt-2 md:mt-0">
+                        <!-- Left: Calendar Widget (Centered) -->
+                        <div class="shrink-0">
                             ${getCalendarWidget()}
                         </div>
 
-                        <!-- Right: Text Content -->
-                        <div class="w-full flex-1 text-center md:text-left space-y-2">
-                            
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider mb-1 mx-auto md:mx-0">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                ${TEXTS.siteTitle}
-                            </div>
+                        <!-- Divider (Desktop Only) -->
+                        <div class="hidden md:block w-px h-32 bg-gradient-to-b from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+
+                        <!-- Right: Text Content (Centered) -->
+                        <div class="text-center space-y-3">
                             
                             <h2 class="text-2xl md:text-4xl font-black leading-tight tracking-tight text-slate-800 dark:text-white">
                                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">কুরআন তাফসির</span> 
                                 ও সীরাত কোর্স
                             </h2>
                             
-                            <p class="opacity-70 text-sm md:text-base leading-relaxed font-medium max-w-xl mx-auto md:mx-0 text-slate-600 dark:text-slate-300">
+                            <p class="opacity-70 text-sm md:text-base leading-relaxed font-medium max-w-md mx-auto text-slate-600 dark:text-slate-300">
                                 কুরআনের গভীর জ্ঞান এবং রাসূল (সা.) এর জীবনের শিক্ষণীয় ঘটনাবলী জানতে আমাদের এই আয়োজন।
                             </p>
                         </div>

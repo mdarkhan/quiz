@@ -85,15 +85,15 @@
 
                 // 2. Fetch Config from Row 2 (Index 0 in data rows)
                 if (rows.length > 0) {
-                    // Timer (Column J = Index 9)
-                    if (rows[0].c[9] && rows[0].c[9].v) {
-                         const timeVal = Number(rows[0].c[9].v);
+                    // Timer (Column O = Index 14)
+                    if (rows[0].c[14] && rows[0].c[14].v) {
+                         const timeVal = Number(rows[0].c[14].v);
                          if (!isNaN(timeVal)) QUIZ_TIME_LIMIT = timeVal;
                     }
                     
-                    // Password (Column K = Index 10) - NEW ADDITION
-                    if (rows[0].c[10] && rows[0].c[10].v) {
-                        QUIZ_PASSWORD = String(rows[0].c[10].v).trim();
+                    // Password (Column P = Index 15)
+                    if (rows[0].c[15] && rows[0].c[15].v) {
+                        QUIZ_PASSWORD = String(rows[0].c[15].v).trim();
                     }
                 }
 
@@ -101,16 +101,16 @@
                 ALL_QUIZZES = rows.map(row => {
                     const cells = row.c;
                     
-                    // --- Dynamic Options Handling (Up to 7) ---
+                    // --- Dynamic Options Handling (Up to 12) ---
                     let options = [];
-                    for (let i = 1; i <= 7; i++) {
+                    for (let i = 1; i <= 12; i++) {
                         if (cells[i] && cells[i].v) {
                             options.push(String(cells[i].v).trim());
                         }
                     }
 
-                    // --- Correct Answer Handling ---
-                    let correctVal = cells[8] ? String(cells[8].v) : "1";
+                    // --- Correct Answer Handling (Column N = Index 13) ---
+                    let correctVal = cells[13] ? String(cells[13].v) : "1";
                     let correctIndices = [];
                     
                     if (correctVal.includes(",")) {
@@ -1070,6 +1070,7 @@
         function renderQuiz() {
             const qState = state.quiz;
             const quizData = qState.questions; 
+            const banglaIndices = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ", "ঝ", "ঞ", "ট", "ঠ"];
             
             const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
             const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
@@ -1292,26 +1293,39 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 gap-3 pl-12">
+                            <div class="grid grid-cols-1 gap-3 pl-0 md:pl-12">
                                 ${q.options.map((option, optIdx) => {
                                     const isSelected = userAnswers.includes(optIdx);
-                                    let optionClass = state.darkMode 
-                                        ? (isSelected ? 'bg-emerald-900 bg-opacity-40 border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-800 border-slate-700 hover:border-slate-500') 
-                                        : (isSelected ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500' : 'bg-white border-stone-200 hover:border-stone-400 shadow-sm');
                                     
+                                    // Option container styles
+                                    let optionClass = state.darkMode 
+                                        ? (isSelected ? 'bg-emerald-900/40 border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-750') 
+                                        : (isSelected ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 shadow-md' : 'bg-white border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/30 shadow-sm');
+                                    
+                                    // NEW: Distinct Badge Style for Alphabets (The Solution)
+                                    let badgeClass = state.darkMode
+                                        ? (isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 group-hover:bg-slate-600 group-hover:text-white')
+                                        : (isSelected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100 group-hover:text-emerald-700');
+
                                     let marker = isMultiple 
                                         ? (isSelected ? '<i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="square" class="w-5 h-5 opacity-30"></i>')
                                         : (isSelected ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="circle" class="w-5 h-5 opacity-30"></i>');
+                                    
                                     return `
                                     <button 
                                         onclick="actions.toggleQuizOption(${qIdx}, ${optIdx}, ${isMultiple})"
-                                        class="w-full p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${optionClass}"
+                                        class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${optionClass}"
                                     >
-                                        <div class="flex items-center">
-                                            <span class="mr-3 opacity-40 font-bold">${String.fromCharCode(65 + optIdx)}.</span>
-                                            <span class="${isSelected ? 'text-emerald-700 dark:text-emerald-300 font-bold' : ''}">${option}</span>
+                                        <div class="flex items-center gap-3">
+                                            <!-- Clearly visible badge -->
+                                            <div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">
+                                                ${banglaIndices[optIdx] || (optIdx + 1)}
+                                            </div>
+                                            <span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span>
                                         </div>
-                                        ${marker}
+                                        <div class="shrink-0 pl-2">
+                                            ${marker}
+                                        </div>
                                     </button>
                                     `;
                                 }).join('')}

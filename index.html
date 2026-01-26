@@ -4,44 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>মাসউদ আলিমী - সীরাত কোর্স</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://unpkg.com/lucide@latest"></script>
-    
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                container: {
-                    center: true,
-                    padding: { DEFAULT: '1rem', sm: '1.5rem', lg: '2rem', xl: '2.5rem', '2xl': '3rem' },
-                },
+                container: { center: true, padding: { DEFAULT: '1rem', sm: '1.5rem', lg: '2rem' } },
                 extend: {
-                    fontFamily: {
-                        sans: ['"Noto Sans Bengali"', '"Hind Siliguri"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        serif: ['ui-serif', 'Georgia', 'serif'],
-                    },
-                    colors: {
-                        emerald: {
-                            50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 
-                            400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 
-                            800: '#065f46', 900: '#064e3b', 950: '#022c22',
-                        }
-                    },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-                        'glow': '0 0 15px rgba(16, 185, 129, 0.3)'
-                    }
+                    fontFamily: { sans: ['"Noto Sans Bengali"', '"Hind Siliguri"', 'sans-serif'] },
+                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' } },
+                    boxShadow: { 'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)', 'glow': '0 0 15px rgba(16, 185, 129, 0.3)' }
                 }
             }
         }
     </script>
-
     <style>
         body { font-family: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -53,681 +33,171 @@
         .animate-marquee:hover { animation-play-state: paused; }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800 transition-colors duration-300 min-h-screen flex flex-col antialiased">
-
+<body class="bg-stone-50 text-stone-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col antialiased">
     <div id="app" class="contents"></div>
 
     <script type="module">
-        // --- 1. FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- 2. DATA CONSTANTS & GOOGLE SHEET LOGIC ---
-        
+        // --- CONSTANTS & DATA ---
         const SHEET_JSON_URL = "https://docs.google.com/spreadsheets/d/15xgI5Q8rWWrjJEen7fQtGaULAFDPIpx5eL4I-74GnWY/gviz/tq?tqx=out:json&gid=0";
-
-        let ALL_QUIZZES = [];
-        let QUIZ_TIME_LIMIT = 3600; 
-        let QUIZ_PASSWORD = ""; // Variable to store password
-
-        // Fetch Function
-        async function fetchQuizData() {
-            try {
-                const response = await fetch(SHEET_JSON_URL);
-                const text = await response.text();
-
-                // 1. Clean Google's Prefix/Suffix
-                const jsonText = text.substring(text.indexOf("({") + 1, text.lastIndexOf("})") + 1);
-                const jsonData = JSON.parse(jsonText);
-                
-                const rows = jsonData.table.rows;
-
-                // 2. Fetch Config from Row 2 (Index 0 in data rows)
-                if (rows.length > 0) {
-                    // Timer (Column O = Index 14)
-                    if (rows[0].c[14] && rows[0].c[14].v) {
-                         const timeVal = Number(rows[0].c[14].v);
-                         if (!isNaN(timeVal)) QUIZ_TIME_LIMIT = timeVal;
-                    }
-                    
-                    // Password (Column P = Index 15)
-                    if (rows[0].c[15] && rows[0].c[15].v) {
-                        QUIZ_PASSWORD = String(rows[0].c[15].v).trim();
-                    }
-                }
-
-                // 3. Loop and Create Questions
-                ALL_QUIZZES = rows.map(row => {
-                    const cells = row.c;
-                    
-                    // --- Dynamic Options Handling (Up to 12) ---
-                    let options = [];
-                    for (let i = 1; i <= 12; i++) {
-                        if (cells[i] && cells[i].v) {
-                            options.push(String(cells[i].v).trim());
-                        }
-                    }
-
-                    // --- Correct Answer Handling (Column N = Index 13) ---
-                    let correctVal = cells[13] ? String(cells[13].v) : "1";
-                    let correctIndices = [];
-                    
-                    if (correctVal.includes(",")) {
-                        correctIndices = correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n));
-                    } else {
-                        const val = parseInt(correctVal);
-                        if (!isNaN(val)) correctIndices = [val - 1];
-                    }
-
-                    return {
-                        question: cells[0] ? cells[0].v : "প্রশ্ন লোড হয়নি",
-                        options: options,
-                        correctIndices: correctIndices,
-                        correctIndex: correctIndices[0],
-                        note: "", 
-                        type: correctIndices.length > 1 ? "multiple" : "single"
-                    };
-                });
-
-                console.log(`Loaded ${ALL_QUIZZES.length} questions. Time: ${QUIZ_TIME_LIMIT}s, Password Protected: ${QUIZ_PASSWORD ? 'Yes' : 'No'}`);
-
-            } catch (error) {
-                console.error("Error fetching Google Sheet Data:", error);
-            }
-        }
-
-        fetchQuizData();
-
-        const COURSE_DATA = [
-            {
-                id: 2,
-                date: "2026-01-02",
-                duration: "2 hr 15 min",
-                category: "seerat",
-                driveLink: "https://drive.google.com/file/d/10ec8WS0aDemwlLFaavuA1_fTyV1m6x3j/view?usp=sharing",
-                content: {
-                    title: "সীরাত-০১ঃ সীরাত পাঠের গুরুত্ব",
-                    description: "আমাদের দৈনন্দিন জীবন ও আখিরাতে সীরাত পাঠের গুরুত্ব ও পদ্ধতি সম্পর্কে আলোচনা করা হয়েছে।",
-                    syllabus: `দারসের আলোচনা আর "সীরাত পাঠ" বইয়ের ১৫ থেকে ৪৫ পৃষ্ঠার মধ্যে পরবর্তী পরীক্ষা হবে ইনশা আল্লাহু তা'আলা।`,
-                    resources: [{ label: "বইঃ সীরাত পাঠ - গুরুত্ব, পদ্ধতি ও প্রায়োগিক রুপ<br />(লেখকঃ মাওলানা খালিদ সাইফুল্লাহ রহমানী)", url: "#" }]
-                },
-                quiz: []
-            },
-            {
-                id: 4,
-                date: "2026-01-09",
-                duration: "1 hr 55 min",
-                category: "seerat",
-                driveLink: "https://drive.google.com/file/d/1ZDWo-M7Ai0EFPyO2sF19OV7X38yDWDOk/view?usp=sharing",
-                content: {
-                    title: "সীরাত-০২ঃ সীরাত সংরক্ষণ ও আরব জাতির ইতিহাস",
-                    description: "সীরাত সংরক্ষণের বৈজ্ঞানিক পদ্ধতি, আরবের ভৌগোলিক গুরুত্ব এবং ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর ইতিহাস।",
-                    summary: [
-                        "সীরাত সংরক্ষণের ইতিহাস ও নির্ভরযোগ্যতা",
-                        "আরব উপদ্বীপের ভৌগোলিক ও কৌশলগত গুরুত্ব",
-                        "আরব জাতির শ্রেণিবিভাগ",
-                        "ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর মক্কায় আগমন",
-                        "আরবে মূর্তিপূজার সূচনা"
-                    ],
-                    syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২১ থেকে ২৬ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`,
-                    resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }],
-                    hasFamilyTree: true
-                },
-                quiz: []
-            },
-            {
-                id: 5,
-                date: "2026-01-16",
-                duration: "2 hr 12 min",
-                category: "seerat",
-                driveLink: "https://drive.google.com/file/d/1kZ_1tZbT5hPbaCVFbEmeX2TbGRcE_zy-/view?usp=sharing",
-                content: {
-                    title: "সীরাত-০৩",
-                    description: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।",
-                    summary: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।",
-                    syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২৬ থেকে ৪২ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`,
-                    resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }]
-                },
-                quiz: []
-            },
-            {
-                id: 6,
-                date: "2026-01-23",
-                duration: "2 hr 31 min",
-                category: "seerat",
-                driveLink: "https://drive.google.com/file/d/1-f2y26WqHG81gh4vQANjlgQQ9saxJn1r/view?usp=sharing",
-                content: {
-                    title: "সীরাত-০৪",
-                    description: "নবুওয়ত লাভ এবং মক্কী জীবনের প্রারম্ভিক দাওয়াত ও সংঘাত।",
-                    syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ৪২ থেকে ৫০ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`,
-                    resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }]
-                },
-                quiz: []
-            },
-            // NEW SECTION: মহিলাদের হালাকাহ
-            {
-                id: 101,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1TsM9B0GElMMMo-8Qj_rO_Sv3QaNhv9Oe/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১ঃ নামাজ",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 102,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1KAfzoRaNAJrq0JioJuyN6-xZOGejBuEs/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-২ঃ ইলমের গুরুত্ব ও ফজিলত",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 103,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1ijQkY8gQz7Z3rMH-8hxDNoyaQcodoiRs/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৩ঃ মুখের হেফাজত",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 104,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1fR73OwMi86biSGcQigLAhwbi_Mi9KTo9/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৪ঃ আদর্শ পরিবার ০১",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 105,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1fa_Izojw3E3t3UmSIba0H2LC8s5cfIr6/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৫ঃ আদর্শ পরিবার ২",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 106,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1UYihVWlwr_rVLRcdk9F6UvFD6pb6XgZ7/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৭ঃ আদর্শ পরিবার ৩",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 107,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1r8IUAgt1mG8fANf1e5GAQCG99wWnWmof/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৮ঃ পরকীয়া",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 108,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1cqm0Uaf2JkMz_qsVDLt-VTMz4jfwp7pI/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-৯ঃ নেক সন্তান ০১",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 109,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1jb-Jf1lS8aOB3F4fbSDKXlC99GQ-1ekJ/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১০ঃ নেক সন্তান ০২",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 110,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1uOqu_iUwDnV0dHgBuut9YQyGZwb-BSID/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১১ঃ নেক সন্তান ৩",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 111,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1o3TeLFQU07c4rT4FB-QtlPh8CPwvJTee/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১২ঃ নেক সন্তান ৪",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 112,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1JUY0vC5cj8UEuHQ4UBTv5fJLk7s4d6gM/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১৩ঃ নেক সন্তান ৫",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 113,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1lHEMz8rh4OFi51mE9jdk22PJ4VKAEy21/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১৪ঃ নেক সন্তান ০৬",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            },
-            {
-                id: 114,
-                date: "সংগৃহীত",
-                duration: "অনির্ধারিত",
-                category: "halakah",
-                driveLink: "https://drive.google.com/file/d/1RpGNTMKseJLBzSZnwLUkHop5hvSZPAwr/view?usp=sharing",
-                content: {
-                    title: "মহিলাদের হালাকাহ-১৫ঃ ফরজে আইন-১",
-                    description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।",
-                    resources: []
-                },
-                quiz: []
-            }
-        ];
+        let ALL_QUIZZES = [], QUIZ_TIME_LIMIT = 3600, QUIZ_PASSWORD = "";
 
         const TEXTS = {
-            siteTitle: "মাসউদ আলিমী",
-            subtitle: "কুরআন তাফসির ও সীরাত কোর্স",
-            home: "হোম",
-            searchPlaceholder: "ক্লাস খুঁজুন...",
-            listen: "শুনুন",
-            download: "ডাউনলোড",
-            summary: "সারসংক্ষেপ",
-            resources: "রিসোর্স ও নোট",
-            syllabus: "পরবর্তী ক্লাসের প্রস্তুতি ও সিলেবাস",
-            back: "ফিরে যান",
-            playOnDrive: "ড্রাইভে প্লে করুন",
-            footerText: "সর্বস্বত্ব সংরক্ষিত © ২০২৬ | মাসউদ আলিমী",
-            tafsir: "তাফসির",
-            seerat: "সীরাত",
-            halakah: "মহিলাদের হালাকাহ",
-            all: "সব",
-            noResults: "কোনো ক্লাস খুঁজে পাওয়া যায়নি।",
-            takeQuiz: "কুইজ টেস্ট দিন",
-            quizTitle: "আপনার জ্ঞান যাচাই করুন",
-            quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।",
-            startQuiz: "কুইজ শুরু করুন",
-            resumeQuiz: "কুইজ চালিয়ে যান",
-            question: "প্রশ্ন",
-            next: "পরবর্তী",
-            finish: "ফলাফল দেখুন",
-            yourScore: "আপনার স্কোর",
-            totalQuestions: "মোট প্রশ্ন",
-            retry: "আবার চেষ্টা করুন",
-            backToLecture: "ক্লাসে ফিরে যান",
-            correct: "সঠিক উত্তর!",
-            wrong: "ভুল উত্তর!",
-            correctAnswerIs: "সঠিক উত্তরটি হলো:",
-            globalQuizTitle: "সীরাত কুইজ পরীক্ষা",
-            globalQuizDesc: "আপনার সীরাত জ্ঞান যাচাই করুন এবং নিজেকে প্রস্তুত করুন।",
-            startGlobalQuiz: "কুইজ শুরু করুন",
-            start: "শুরু করুন",
-            enterDetails: "আপনার পরিচয় দিন",
-            nameLabel: "আপনার নাম",
-            guardianLabel: "পিতা/স্বামীর নাম",
-            namePlaceholder: "আপনার পূর্ণ নাম লিখুন...",
-            guardianPlaceholder: "নাম লিখুন...",
-            leaderboardTitle: "মেধাতালিকা",
-            rank: "অবস্থান",
-            name: "নাম",
-            score: "প্রাপ্ত নম্বর", 
-            time: "জমার সময়",   
-            submissionSerial: "জমার ক্রম", 
-            timeTaken: "গৃহীত সময়",
-            viewLeaderboard: "মেধাতালিকা দেখুন",
-            goHome: "হোমপেজে ফিরে যান"
+            siteTitle: "মাসউদ আলিমী", subtitle: "কুরআন তাফসির ও সীরাত কোর্স", home: "হোম", searchPlaceholder: "ক্লাস খুঁজুন...", listen: "শুনুন", download: "ডাউনলোড", summary: "সারসংক্ষেপ", resources: "রিসোর্স ও নোট", syllabus: "পরবর্তী ক্লাসের প্রস্তুতি ও সিলেবাস", back: "ফিরে যান", playOnDrive: "ড্রাইভে প্লে করুন", footerText: "সর্বস্বত্ব সংরক্ষিত © ২০২৬ | মাসউদ আলিমী", tafsir: "তাফসির", seerat: "সীরাত", halakah: "মহিলাদের হালাকাহ", all: "সব", noResults: "কোনো ক্লাস খুঁজে পাওয়া যায়নি।", takeQuiz: "কুইজ টেস্ট দিন", quizTitle: "আপনার জ্ঞান যাচাই করুন", quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।", startQuiz: "কুইজ শুরু করুন", resumeQuiz: "কুইজ চালিয়ে যান", question: "প্রশ্ন", next: "পরবর্তী", finish: "ফলাফল দেখুন", yourScore: "আপনার স্কোর", totalQuestions: "মোট প্রশ্ন", retry: "আবার চেষ্টা করুন", backToLecture: "ক্লাসে ফিরে যান", correct: "সঠিক উত্তর!", wrong: "ভুল উত্তর!", correctAnswerIs: "সঠিক উত্তরটি হলো:", globalQuizTitle: "সীরাত কুইজ পরীক্ষা", globalQuizDesc: "আপনার সীরাত জ্ঞান যাচাই করুন এবং নিজেকে প্রস্তুত করুন।", startGlobalQuiz: "কুইজ শুরু করুন", start: "শুরু করুন", enterDetails: "আপনার পরিচয় দিন", nameLabel: "আপনার নাম", guardianLabel: "পিতা/স্বামীর নাম", namePlaceholder: "আপনার পূর্ণ নাম লিখুন...", guardianPlaceholder: "নাম লিখুন...", leaderboardTitle: "মেধাতালিকা", rank: "অবস্থান", name: "নাম", score: "প্রাপ্ত নম্বর", time: "জমার সময়", submissionSerial: "জমার ক্রম", timeTaken: "গৃহীত সময়", viewLeaderboard: "মেধাতালিকা দেখুন", goHome: "হোমপেজে ফিরে যান"
         };
+
+        const COURSE_DATA = [
+            { id: 2, date: "2026-01-02", duration: "2 hr 15 min", category: "seerat", driveLink: "https://drive.google.com/file/d/10ec8WS0aDemwlLFaavuA1_fTyV1m6x3j/view?usp=sharing", content: { title: "সীরাত-০১ঃ সীরাত পাঠের গুরুত্ব", description: "আমাদের দৈনন্দিন জীবন ও আখিরাতে সীরাত পাঠের গুরুত্ব ও পদ্ধতি সম্পর্কে আলোচনা করা হয়েছে।", syllabus: `দারসের আলোচনা আর "সীরাত পাঠ" বইয়ের ১৫ থেকে ৪৫ পৃষ্ঠার মধ্যে পরবর্তী পরীক্ষা হবে ইনশা আল্লাহু তা'আলা।`, resources: [{ label: "বইঃ সীরাত পাঠ - গুরুত্ব, পদ্ধতি ও প্রায়োগিক রুপ<br />(লেখকঃ মাওলানা খালিদ সাইফুল্লাহ রহমানী)", url: "#" }] }, quiz: [] },
+            { id: 4, date: "2026-01-09", duration: "1 hr 55 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1ZDWo-M7Ai0EFPyO2sF19OV7X38yDWDOk/view?usp=sharing", content: { title: "সীরাত-০২ঃ সীরাত সংরক্ষণ ও আরব জাতির ইতিহাস", description: "সীরাত সংরক্ষণের বৈজ্ঞানিক পদ্ধতি, আরবের ভৌগোলিক গুরুত্ব এবং ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর ইতিহাস।", summary: [ "সীরাত সংরক্ষণের ইতিহাস ও নির্ভরযোগ্যতা", "আরব উপদ্বীপের ভৌগোলিক ও কৌশলগত গুরুত্ব", "আরব জাতির শ্রেণিবিভাগ", "ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর মক্কায় আগমন", "আরবে মূর্তিপূজার সূচনা" ], syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২১ থেকে ২৬ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }], hasFamilyTree: true }, quiz: [] },
+            { id: 5, date: "2026-01-16", duration: "2 hr 12 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1kZ_1tZbT5hPbaCVFbEmeX2TbGRcE_zy-/view?usp=sharing", content: { title: "সীরাত-০৩", description: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।", summary: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।", syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২৬ থেকে ৪২ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }] }, quiz: [] },
+            { id: 6, date: "2026-01-23", duration: "2 hr 31 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1-f2y26WqHG81gh4vQANjlgQQ9saxJn1r/view?usp=sharing", content: { title: "সীরাত-০৪", description: "নবুওয়ত লাভ এবং মক্কী জীবনের প্রারম্ভিক দাওয়াত ও সংঘাত।", syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ৪২ থেকে ৫০ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }] }, quiz: [] },
+            // Halakah Section
+            { id: 101, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1TsM9B0GElMMMo-8Qj_rO_Sv3QaNhv9Oe/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১ঃ নামাজ", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 102, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1KAfzoRaNAJrq0JioJuyN6-xZOGejBuEs/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-২ঃ ইলমের গুরুত্ব ও ফজিলত", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 103, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1ijQkY8gQz7Z3rMH-8hxDNoyaQcodoiRs/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৩ঃ মুখের হেফাজত", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 104, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1fR73OwMi86biSGcQigLAhwbi_Mi9KTo9/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৪ঃ আদর্শ পরিবার ০১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 105, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1fa_Izojw3E3t3UmSIba0H2LC8s5cfIr6/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৫ঃ আদর্শ পরিবার ২", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 106, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1UYihVWlwr_rVLRcdk9F6UvFD6pb6XgZ7/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৭ঃ আদর্শ পরিবার ৩", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 107, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1r8IUAgt1mG8fANf1e5GAQCG99wWnWmof/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৮ঃ পরকীয়া", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 108, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1cqm0Uaf2JkMz_qsVDLt-VTMz4jfwp7pI/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৯ঃ নেক সন্তান ০১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 109, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1jb-Jf1lS8aOB3F4fbSDKXlC99GQ-1ekJ/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১০ঃ নেক সন্তান ০২", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 110, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1uOqu_iUwDnV0dHgBuut9YQyGZwb-BSID/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১১ঃ নেক সন্তান ৩", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 111, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1o3TeLFQU07c4rT4FB-QtlPh8CPwvJTee/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১২ঃ নেক সন্তান ৪", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 112, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1JUY0vC5cj8UEuHQ4UBTv5fJLk7s4d6gM/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৩ঃ নেক সন্তান ৫", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 113, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1lHEMz8rh4OFi51mE9jdk22PJ4VKAEy21/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৪ঃ নেক সন্তান ০৬", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
+            { id: 114, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1RpGNTMKseJLBzSZnwLUkHop5hvSZPAwr/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৫ঃ ফরজে আইন-১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] }
+        ];
 
         const latestLectureWithSyllabus = [...COURSE_DATA].reverse().find(l => l.content.syllabus);
         const GLOBAL_NOTICE = latestLectureWithSyllabus ? latestLectureWithSyllabus.content.syllabus : "আসসালামু আলাইকুম।";
 
         const state = {
-            darkMode: false,
-            view: 'home',
-            selectedLecture: null,
-            filter: 'seerat',
-            search: '',
-            playerMode: 'embed',
-            playbackRate: 1.0,
-            quiz: { 
-                active: false, 
-                currentQuestion: 0, 
-                score: 0, 
-                selectedOption: null, 
-                selectedOptions: [], 
-                isAnswerChecked: false, 
-                isFinished: false, 
-                isReviewing: false,
-                questions: [], 
-                userAnswers: {},
-                userName: "",
-                userGuardian: "",
-                startTime: null,
-                endTime: null,
-                expiryTime: null, // New field for absolute expiration time
-                timerInterval: null,
-                timeLeft: 3600
-            },
-            leaderboardData: []
+            darkMode: false, view: 'home', selectedLecture: null, filter: 'seerat', search: '', playerMode: 'embed', playbackRate: 1.0, leaderboardData: [],
+            quiz: { active: false, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timerInterval: null, timeLeft: 3600 }
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDwR1TblS5HPAzJEkT7TG2RGmjGRBIMj9E",
-            authDomain: "quiz-d9e52.firebaseapp.com",
-            projectId: "quiz-d9e52",
-            storageBucket: "quiz-d9e52.firebasestorage.app",
-            messagingSenderId: "978225433994",
-            appId: "1:978225433994:web:59f6e2e097bb04571c4c73"
+            apiKey: "AIzaSyDwR1TblS5HPAzJEkT7TG2RGmjGRBIMj9E", authDomain: "quiz-d9e52.firebaseapp.com", projectId: "quiz-d9e52", storageBucket: "quiz-d9e52.firebasestorage.app", messagingSenderId: "978225433994", appId: "1:978225433994:web:59f6e2e097bb04571c4c73"
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'seerat-course-v1';
-        
-        let db, auth, currentUser;
-        let unsubscribeLeaderboard = null;
+        let db, auth, currentUser, unsubscribeLeaderboard = null;
 
-        try {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-
-            const initAuth = async () => {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (e) {
-                    console.error("Auth Error:", e);
-                }
-            };
-            initAuth();
-
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                if (user && state.view === 'leaderboard') {
-                    if (typeof actions !== 'undefined') {
-                        actions.fetchLeaderboardData(); 
-                    }
-                }
-            });
-        } catch (e) {
-            console.warn("Firebase not initialized (Offline Mode)", e);
-        }
-
-        const toBanglaDigit = (num) => {
-            if (num === undefined || num === null) return '';
-            return num.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
-        };
-
+        // --- HELPERS ---
+        const toBanglaDigit = (num) => num?.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]) || '';
         const formatTime = (seconds) => {
             if (seconds < 0) seconds = 0;
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${toBanglaDigit(m)}:${toBanglaDigit(s < 10 ? '0' : '')}${toBanglaDigit(s)}`;
+            return `${toBanglaDigit(Math.floor(seconds / 60))}:${toBanglaDigit(seconds % 60 < 10 ? '0' : '')}${toBanglaDigit(seconds % 60)}`;
+        };
+        const getDriveEmbedLink = (url) => typeof url === 'string' && url.includes("/d/") ? `https://drive.google.com/file/d/${url.split("/d/")[1].split('/')[0]}/preview` : url;
+        const MosqueIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M10 6h4"/><path d="M12 6c3.5 0 6 3 6 7h-12c0-4 2.5-7 6-7Z"/><path d="M18 13v8"/><path d="M6 13v8"/><path d="M6 21h12"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg>`;
+
+        // --- LOGIC ---
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app); db = getFirestore(app);
+            const initAuth = async () => { try { await (typeof __initial_auth_token !== 'undefined' && __initial_auth_token ? signInWithCustomToken(auth, __initial_auth_token) : signInAnonymously(auth)); } catch (e) { console.error("Auth Error:", e); } };
+            initAuth();
+            onAuthStateChanged(auth, (user) => { currentUser = user; if (user && state.view === 'leaderboard') actions.fetchLeaderboardData(); });
+        } catch (e) { console.warn("Firebase Offline Mode", e); }
+
+        async function fetchQuizData() {
+            try {
+                const response = await fetch(SHEET_JSON_URL);
+                const text = await response.text();
+                const json = JSON.parse(text.substring(text.indexOf("({") + 1, text.lastIndexOf("})") + 1));
+                const rows = json.table.rows;
+                if (rows.length > 0) {
+                    if (rows[0].c[14]?.v && !isNaN(rows[0].c[14].v)) QUIZ_TIME_LIMIT = Number(rows[0].c[14].v);
+                    if (rows[0].c[15]?.v) QUIZ_PASSWORD = String(rows[0].c[15].v).trim();
+                }
+                ALL_QUIZZES = rows.map(row => {
+                    const cells = row.c;
+                    const options = [];
+                    for (let i = 1; i <= 12; i++) if (cells[i]?.v) options.push(String(cells[i].v).trim());
+                    let correctVal = cells[13] ? String(cells[13].v) : "1";
+                    let correctIndices = correctVal.includes(",") ? correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n)) : (!isNaN(parseInt(correctVal)) ? [parseInt(correctVal) - 1] : []);
+                    return { question: cells[0]?.v || "প্রশ্ন লোড হয়নি", options, correctIndices, correctIndex: correctIndices[0], note: "", type: correctIndices.length > 1 ? "multiple" : "single" };
+                });
+                console.log(`Loaded ${ALL_QUIZZES.length} questions.`);
+            } catch (error) { console.error("Error fetching Sheet:", error); }
+        }
+        fetchQuizData();
+
+        const getSavedQuizState = () => {
+            try {
+                const saved = JSON.parse(localStorage.getItem('seerat_quiz_state'));
+                return (saved && saved.expiryTime > Date.now()) ? saved : (localStorage.removeItem('seerat_quiz_state'), null);
+            } catch { return null; }
         };
 
-        const getDriveEmbedLink = (url) => {
-            if (typeof url !== 'string') return url;
-            const parts = url.split("/d/");
-            if (parts.length > 1) {
-                const id = parts[1].split('/')[0];
-                return `https://drive.google.com/file/d/${id}/preview`;
-            }
-            return url;
-        };
-
-        // --- CALENDAR WIDGET LOGIC ---
         const getCalendarWidget = () => {
             const date = new Date();
-            const year = date.getFullYear();
-            const month = date.getMonth(); // 0-11
-            const day = date.getDate();
-
-            // --- BANGLA DATE CALCULATION (BD Official: Pohela Boishakh April 14) ---
+            const year = date.getFullYear(), month = date.getMonth(), day = date.getDate();
             const bnMonths = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
-            
-            // Calculate Day of Year relative to April 14
-            const startOfBoishakh = new Date(year, 3, 14); // April 14
-            const oneDay = 1000 * 60 * 60 * 24;
-            let diff = Math.floor((date - startOfBoishakh) / oneDay);
+            let diff = Math.floor((date - new Date(year, 3, 14)) / (1000 * 60 * 60 * 24));
             let bnYear = year - 593;
-
-            if (diff < 0) {
-                // Before April 14, it's the previous Bangla year
-                bnYear = year - 594;
-                const startOfPrevBoishakh = new Date(year - 1, 3, 14);
-                diff = Math.floor((date - startOfPrevBoishakh) / oneDay);
-            }
-
-            // BD Official Month Lengths (Revised 2019)
-            // First 6 months (Boishakh-Ashshin) = 31 days
-            // Rest (Kartik-Magh + Choitro) = 30 days
-            // Falgun = 29 (30 in Leap Year)
-            const currentGregYear = (month < 3) ? year : year + 1; // Falgun covers Feb/Mar
-            const isGregLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-            
-            const bnMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, isGregLeap ? 30 : 29, 30];
-            
-            let bnMonthIndex = 0;
-            let bnDate = 0;
-            
-            for(let i=0; i<12; i++) {
-                if (diff < bnMonthDays[i]) {
-                    bnMonthIndex = i;
-                    bnDate = diff + 1;
-                    break;
-                }
-                diff -= bnMonthDays[i];
-            }
-
-            const bnString = `${toBanglaDigit(bnDate)} ${bnMonths[bnMonthIndex]} ${toBanglaDigit(bnYear)}`;
-
-            // --- HIJRI DATE CALCULATION (Manual Map for Mobile Compatibility) ---
-            // Mobile browsers often fail 'bn-BD-u-ca-islamic' and fallback to Gregorian (August).
-            // We use 'en-US' numeric to get the correct Hijri numbers, then map to Bangla manually.
-            const hijriMonths = ["মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জুমাদাল উলা", "জুমাদাস সানি", "রজব", "শা‘বান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
+            if (diff < 0) { bnYear = year - 594; diff = Math.floor((date - new Date(year - 1, 3, 14)) / (1000 * 60 * 60 * 24)); }
+            const bnMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 30 : 29, 30];
+            let bnMonthIndex = 0, bnDate = 0;
+            for (let i = 0; i < 12; i++) { if (diff < bnMonthDays[i]) { bnMonthIndex = i; bnDate = diff + 1; break; } diff -= bnMonthDays[i]; }
             
             const hParts = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(date);
-            // --- HIJRI & ENGLISH USING INTL ---
-            // Format to parts to manually control the output (No 'Era' or 'Jug')
             const hijriParts = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(date);
-            const hDay = hijriParts.find(p => p.type === 'day')?.value;
-            const hMonth = hijriParts.find(p => p.type === 'month')?.value;
-            const hYear = hijriParts.find(p => p.type === 'year')?.value;
-            
-            const enFormatter = new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
-            const enString = enFormatter.format(date);
+            const enString = new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
 
-            return `
-            <div class="w-full md:w-auto flex flex-col items-center relative z-10">
-                
-                <!-- Hijri (Primary) -->
+            return `<div class="w-full md:w-auto flex flex-col items-center relative z-10">
                 <div class="flex items-center justify-center gap-5 mb-5">
-                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none text-right w-[80px]">${hDay}</span>
-                    
-                    <!-- Vertical Divider -->
+                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none text-right w-[80px]">${hijriParts.find(p=>p.type==='day')?.value}</span>
                     <div class="w-px h-16 bg-emerald-200 dark:bg-emerald-800"></div>
-                    
                     <div class="flex flex-col items-start text-left justify-center w-[130px]">
                         <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">আজকের তারিখ</span>
-                        <span class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 leading-none mb-1">${hMonth}</span>
-                        <span class="text-lg font-semibold text-slate-500 dark:text-slate-400 leading-none">${hYear} হিজরি</span>
+                        <span class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 leading-none mb-1">${hijriParts.find(p=>p.type==='month')?.value}</span>
+                        <span class="text-lg font-semibold text-slate-500 dark:text-slate-400 leading-none">${hijriParts.find(p=>p.type==='year')?.value} হিজরি</span>
                     </div>
                 </div>
-
-                <!-- Secondary Dates (Side by Side) -->
                 <div class="flex items-center justify-center gap-6 w-full">
                     <div class="text-right w-[110px]">
-                        <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">
-                            ${bnString.split(' ')[0]} ${bnString.split(' ')[1]}
-                        </div>
-                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${bnString.split(' ')[2]} বঙ্গাব্দ</div>
+                        <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${toBanglaDigit(bnDate)} ${bnMonths[bnMonthIndex]}</div>
+                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${toBanglaDigit(bnYear)} বঙ্গাব্দ</div>
                     </div>
-                    
-                    <!-- Vertical Divider (Aligned with top) -->
                     <div class="w-px bg-slate-200 dark:bg-slate-700 h-10"></div>
-                    
                     <div class="text-left w-[110px]">
-                        <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">
-                            ${enString.split(' ')[0]} ${enString.split(' ')[1]}
-                        </div>
+                        <div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${enString.split(' ')[0]} ${enString.split(' ')[1]}</div>
                         <div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${enString.split(' ')[2]} খ্রিস্টাব্দ</div>
                     </div>
                 </div>
-            </div>
-            `;
+            </div>`;
         };
 
-        const MosqueIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M10 6h4"/><path d="M12 6c3.5 0 6 3 6 7h-12c0-4 2.5-7 6-7Z"/><path d="M18 13v8"/><path d="M6 13v8"/><path d="M6 21h12"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg>`;
-
-        const app = document.getElementById('app');
-        const body = document.body;
-
-        // Helper: Get Saved Quiz State
-        const getSavedQuizState = () => {
-            try {
-                const saved = localStorage.getItem('seerat_quiz_state');
-                if (!saved) return null;
-                const parsed = JSON.parse(saved);
-                // Check if expired
-                if (parsed.expiryTime && parsed.expiryTime > Date.now()) {
-                    return parsed;
-                } else {
-                    localStorage.removeItem('seerat_quiz_state'); // Expired
-                    return null;
-                }
-            } catch (e) { return null; }
-        };
-
-        function render() {
-            if (state.darkMode) {
-                document.documentElement.classList.add('dark');
-                body.classList.remove('bg-stone-50', 'text-stone-800');
-                body.classList.add('bg-slate-900', 'text-slate-100');
-            } else {
-                document.documentElement.classList.remove('dark');
-                body.classList.remove('bg-slate-900', 'text-slate-100');
-                body.classList.add('bg-stone-50', 'text-stone-800');
-            }
-
+        const render = () => {
+            document.documentElement.classList.toggle('dark', state.darkMode);
+            const app = document.getElementById('app');
             let html = '';
-            if (state.view !== 'quiz' && state.view !== 'quiz_registration' && state.view !== 'quiz_password') {
-                html += `<div class="sticky top-0 z-50 w-full flex flex-col">`;
-                html += renderHeader();
-                if (state.view === 'home') html += renderNoticeBar();
-                html += `</div>`;
+            if (!['quiz', 'quiz_registration', 'quiz_password'].includes(state.view)) {
+                html += `<div class="sticky top-0 z-50 w-full flex flex-col">${renderHeader()}${state.view === 'home' ? renderNoticeBar() : ''}</div>`;
             }
-
-            if (state.view === 'home') {
-                html += renderHome();
-                html += renderFooter();
-            } else if (state.view === 'detail') {
-                html += renderDetail();
-                html += renderFooter();
-            } else if (state.view === 'quiz_password') {
-                html += renderPasswordPrompt();
-            } else if (state.view === 'quiz_registration') {
-                html += renderQuizRegistration();
-            } else if (state.view === 'quiz') {
-                html += renderQuiz();
-            } else if (state.view === 'leaderboard') {
-                html += renderLeaderboard();
-            }
+            if (state.view === 'home') html += renderHome() + renderFooter();
+            else if (state.view === 'detail') html += renderDetail() + renderFooter();
+            else if (state.view === 'quiz_password') html += renderPasswordPrompt();
+            else if (state.view === 'quiz_registration') html += renderQuizRegistration();
+            else if (state.view === 'quiz') html += renderQuiz();
+            else if (state.view === 'leaderboard') html += renderLeaderboard();
 
             app.innerHTML = html;
             lucide.createIcons();
-            attachListeners();
-            if(state.view === 'home') {
-                const searchInput = document.getElementById('searchInput');
-                if(searchInput) {
-                    searchInput.value = state.search;
-                    if(document.activeElement?.id === 'searchInput') searchInput.focus();
-                }
-            } else if (state.view === 'quiz_password') {
-                const passInput = document.getElementById('quiz-pass-input');
-                if(passInput) passInput.focus();
-            }
-        }
+            if (state.view === 'home') document.getElementById('searchInput')?.focus();
+            if (state.view === 'quiz_password') document.getElementById('quiz-pass-input')?.focus();
+        };
 
-        function renderHeader() {
-            const bgClass = state.darkMode ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-stone-200';
-            const iconBg = state.darkMode ? 'bg-emerald-600' : 'bg-emerald-500';
-            const textClass = state.darkMode ? 'text-emerald-400' : 'text-emerald-700';
-
-            return `
-            <header class="shadow-md backdrop-blur-md border-b ${bgClass}">
+        const renderHeader = () => `
+            <header class="shadow-md backdrop-blur-md border-b bg-white/90 border-stone-200 dark:bg-slate-900/90 dark:border-slate-700">
                 <div class="container mx-auto px-4 py-3 flex items-center justify-between">
                     <div class="flex items-center gap-3 cursor-pointer" onclick="actions.goHome()">
-                        <div class="p-2 rounded-lg ${iconBg} text-white">${MosqueIcon()}</div>
-                        <div>
-                            <h1 class="text-lg md:text-xl font-bold leading-tight ${textClass}">${TEXTS.siteTitle}</h1>
-                            <p class="text-xs opacity-70 hidden sm:block">${TEXTS.subtitle}</p>
-                        </div>
+                        <div class="p-2 rounded-lg bg-emerald-500 dark:bg-emerald-600 text-white">${MosqueIcon()}</div>
+                        <div><h1 class="text-lg md:text-xl font-bold leading-tight text-emerald-700 dark:text-emerald-400">${TEXTS.siteTitle}</h1><p class="text-xs opacity-70 hidden sm:block">${TEXTS.subtitle}</p></div>
                     </div>
                     <div class="flex items-center gap-2 md:gap-3">
                         <button onclick="actions.toggleTheme()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition">
@@ -735,1008 +205,373 @@
                         </button>
                     </div>
                 </div>
-            </header>
-            `;
-        }
+            </header>`;
 
-        function renderNoticeBar() {
-            const colors = state.darkMode ? 'bg-emerald-900 text-emerald-100 border-emerald-800' : 'bg-emerald-600 text-white border-emerald-700';
-            return `<div class="w-full overflow-hidden py-3 shadow-md relative z-10 border-b ${colors}"><div class="animate-marquee flex items-center"><div class="flex items-center shrink-0 px-8"><span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span><span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span></div><div class="flex items-center shrink-0 px-8"><span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span><span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span></div><div class="flex items-center shrink-0 px-8"><span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span><span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span></div></div></div>`;
-        }
+        const renderNoticeBar = () => `
+            <div class="w-full overflow-hidden py-3 shadow-md relative z-10 border-b bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-900 dark:text-emerald-100 dark:border-emerald-800">
+                <div class="animate-marquee flex items-center">
+                    ${Array(3).fill(`<div class="flex items-center shrink-0 px-8"><span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span><span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span></div>`).join('')}
+                </div>
+            </div>`;
 
-        function renderHome() {
-            const heroBg = state.darkMode ? 'bg-gradient-to-br from-slate-900 to-slate-950 border-slate-800' : 'bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/50 shadow-sm';
-            
-            const filtered = COURSE_DATA.filter(l => {
-                const matchesSearch = l.content.title.toLowerCase().includes(state.search.toLowerCase()) || 
-                                      l.content.description.toLowerCase().includes(state.search.toLowerCase());
-                const matchesCategory = state.filter === 'all' || l.category === state.filter;
-                return matchesSearch && matchesCategory;
-            });
-            
+        const renderHome = () => {
+            const filtered = COURSE_DATA.filter(l => (state.filter === 'all' || l.category === state.filter) && (l.content.title.toLowerCase().includes(state.search.toLowerCase()) || l.content.description.toLowerCase().includes(state.search.toLowerCase())));
             const savedState = getSavedQuizState();
-            const quizBtnText = savedState ? TEXTS.resumeQuiz : TEXTS.startGlobalQuiz;
-            const quizBtnAction = savedState ? "actions.resumeQuiz()" : "actions.startQuiz()";
-            const quizBtnIcon = savedState ? "play" : "play-circle";
-
             return `
             <main class="container mx-auto px-4 py-4 md:py-6 min-h-[calc(100vh-140px)] animate-fade-in">
-                
-                <div class="rounded-3xl p-6 border mb-6 ${heroBg} relative overflow-hidden">
-                    
+                <div class="rounded-3xl p-6 border mb-6 bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/50 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800 relative overflow-hidden">
                     <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 relative z-10">
-                        
-                        <!-- Left: Calendar Widget (Centered) -->
-                        <div class="shrink-0">
-                            ${getCalendarWidget()}
-                        </div>
-
-                        <!-- Divider (Desktop Only) -->
+                        <div class="shrink-0">${getCalendarWidget()}</div>
                         <div class="hidden md:block w-px h-32 bg-gradient-to-b from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-
-                        <!-- Right: Text Content (Centered) -->
                         <div class="text-center space-y-3">
-                            
                             <h2 class="text-2xl md:text-4xl font-black leading-tight tracking-tight text-slate-800 dark:text-white">
-                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">কুরআন তাফসির</span> 
-                                ও সীরাত কোর্স
+                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">কুরআন তাফসির</span> ও সীরাত কোর্স
                             </h2>
-                            
-                            <p class="opacity-70 text-sm md:text-base leading-relaxed font-medium max-w-md mx-auto text-slate-600 dark:text-slate-300">
-                                কুরআনের গভীর জ্ঞান এবং রাসূল (সা.) এর জীবনের শিক্ষণীয় ঘটনাবলী জানতে আমাদের এই আয়োজন।
-                            </p>
+                            <p class="opacity-70 text-sm md:text-base leading-relaxed font-medium max-w-md mx-auto text-slate-600 dark:text-slate-300">কুরআনের গভীর জ্ঞান এবং রাসূল (সা.) এর জীবনের শিক্ষণীয় ঘটনাবলী জানতে আমাদের এই আয়োজন।</p>
                         </div>
-
                     </div>
                 </div>
-
                 <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white mb-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="space-y-2">
-                        <div class="flex items-center gap-2 text-emerald-200 text-sm font-bold uppercase tracking-wider">
-                            <i data-lucide="trophy" class="w-4 h-4"></i> কুইজ প্রতিযোগিতা
-                        </div>
-                        <h3 class="text-2xl font-bold">${TEXTS.globalQuizTitle}</h3>
-                        <p class="opacity-90 max-w-lg">${TEXTS.globalQuizDesc}</p>
+                        <div class="flex items-center gap-2 text-emerald-200 text-sm font-bold uppercase tracking-wider"><i data-lucide="trophy" class="w-4 h-4"></i> কুইজ প্রতিযোগিতা</div>
+                        <h3 class="text-2xl font-bold">${TEXTS.globalQuizTitle}</h3><p class="opacity-90 max-w-lg">${TEXTS.globalQuizDesc}</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button onclick="actions.viewLeaderboard()" class="bg-teal-900 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none">
-                            <i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}
-                        </button>
-                        <button onclick="${quizBtnAction}" class="bg-white text-emerald-700 px-8 py-3 rounded-full font-bold hover:bg-white hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap">
-                            <i data-lucide="${quizBtnIcon}" class="w-5 h-5"></i> ${quizBtnText}
-                        </button>
+                        <button onclick="actions.viewLeaderboard()" class="bg-teal-900 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
+                        <button onclick="${savedState ? "actions.resumeQuiz()" : "actions.startQuiz()"}" class="bg-white text-emerald-700 px-8 py-3 rounded-full font-bold hover:bg-white hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="${savedState ? "play" : "play-circle"}" class="w-5 h-5"></i> ${savedState ? TEXTS.resumeQuiz : TEXTS.startGlobalQuiz}</button>
                     </div>
                 </div>
-
                 <div class="flex flex-col md:flex-row gap-4 justify-between items-center sticky top-20 z-30 py-2 mb-8">
                     <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
-                        ${['tafsir', 'seerat', 'halakah'].map(cat => {
-                            const isActive = state.filter === cat;
-                            const activeClass = state.darkMode ? 'bg-emerald-600 text-white' : 'bg-emerald-600 text-white shadow-glow';
-                            const inactiveClass = state.darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-white hover:bg-stone-100 border border-stone-200';
-                            return `<button onclick="actions.setFilter('${cat}')" class="px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${isActive ? activeClass : inactiveClass}">${TEXTS[cat]}</button>`
-                        }).join('')}
+                        ${['tafsir', 'seerat', 'halakah'].map(cat => `<button onclick="actions.setFilter('${cat}')" class="px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${state.filter === cat ? 'bg-emerald-600 text-white shadow-glow dark:shadow-none' : 'bg-white hover:bg-stone-100 border border-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700'}">${TEXTS[cat]}</button>`).join('')}
                     </div>
                     <div class="relative w-full md:w-64">
-                        <input id="searchInput" type="text" placeholder="${TEXTS.searchPlaceholder}" 
-                            class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm ${state.darkMode ? 'bg-slate-800 border-slate-700 placeholder-slate-500 text-white' : 'bg-white placeholder-stone-400'}"
-                            oninput="actions.setSearch(this.value)"
-                            value="${state.search}"
-                        >
+                        <input id="searchInput" type="text" placeholder="${TEXTS.searchPlaceholder}" class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm bg-white placeholder-stone-400 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-slate-500 dark:text-white" oninput="actions.setSearch(this.value)" value="${state.search}">
                         <i data-lucide="search" class="absolute left-3 top-2.5 opacity-50 w-4 h-4"></i>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${filtered.length > 0 ? filtered.map(lecture => renderLectureCard(lecture)).join('') : renderEmptyState()}
+                    ${filtered.length > 0 ? filtered.map(l => renderLectureCard(l)).join('') : renderEmptyState()}
                 </div>
-            </main>
-            `;
-        }
+            </main>`;
+        };
 
-        function renderLectureCard(lecture) {
-            const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
-            
-            let catColor = 'bg-emerald-500';
-            let badgeBg = state.darkMode ? 'bg-slate-700 text-slate-300' : 'bg-stone-100 text-stone-600';
-            if (lecture.category === 'tafsir') {
-                catColor = 'bg-emerald-500';
-            } else if (lecture.category === 'seerat') {
-                catColor = 'bg-amber-500';
-            } else if (lecture.category === 'halakah') {
-                catColor = 'bg-rose-500'; 
-            }
-
-            const titleColor = state.darkMode ? 'text-slate-100' : 'text-slate-800';
-
+        const renderLectureCard = (lecture) => {
+            const badgeBg = { tafsir: 'bg-emerald-100 text-emerald-600', seerat: 'bg-amber-100 text-amber-600', halakah: 'bg-rose-100 text-rose-600' }[lecture.category] || 'bg-stone-100';
+            const catColor = { tafsir: 'bg-emerald-500', seerat: 'bg-amber-500', halakah: 'bg-rose-500' }[lecture.category] || 'bg-emerald-500';
             return `
-            <div onclick="actions.selectLecture(${lecture.id})" class="group relative cursor-pointer rounded-2xl overflow-hidden border transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${cardBg}">
+            <div onclick="actions.selectLecture(${lecture.id})" class="group relative cursor-pointer rounded-2xl overflow-hidden border transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
-                
                 <div class="p-6 relative z-10">
                     <div class="flex justify-between items-start mb-4">
-                        <span class="text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest shadow-sm ${badgeBg}">${TEXTS[lecture.category]}</span>
-                        <div class="flex flex-col items-end gap-1">
-                            <div class="flex items-center gap-1.5 text-xs opacity-60 font-semibold uppercase tracking-wide">
-                                <i data-lucide="calendar" class="w-3 h-3"></i> <span>${lecture.date}</span>
-                            </div>
-                        </div>
+                        <span class="text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest shadow-sm bg-stone-100 text-stone-600 dark:bg-slate-700 dark:text-slate-300">${TEXTS[lecture.category]}</span>
+                        <div class="flex flex-col items-end gap-1"><div class="flex items-center gap-1.5 text-xs opacity-60 font-semibold uppercase tracking-wide"><i data-lucide="calendar" class="w-3 h-3"></i> <span>${lecture.date}</span></div></div>
                     </div>
-                    
-                    <h3 class="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-emerald-600 transition-colors ${titleColor}">${lecture.content.title}</h3>
+                    <h3 class="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-emerald-600 transition-colors text-slate-800 dark:text-slate-100">${lecture.content.title}</h3>
                     <p class="text-sm opacity-70 line-clamp-2 leading-relaxed mb-6 font-medium">${lecture.content.description}</p>
-                    
                     <div class="flex items-center justify-between pt-4 border-t border-dashed border-gray-200 dark:border-gray-700">
-                         <div class="flex items-center gap-2 text-xs font-bold opacity-60">
-                            <div class="p-1 rounded bg-gray-100 dark:bg-slate-700"><i data-lucide="clock" class="w-3 h-3"></i></div>
-                           <span>${lecture.duration}</span>
-                         </div>
-                    
-                        <div class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-500 px-4 py-2 rounded-full shadow-lg shadow-emerald-500/20 group-hover:bg-emerald-600 transition-all group-hover:scale-105">
-                           ${TEXTS.listen} <i data-lucide="play" class="w-3 h-3 fill-current"></i>
-                         </div>
+                         <div class="flex items-center gap-2 text-xs font-bold opacity-60"><div class="p-1 rounded bg-gray-100 dark:bg-slate-700"><i data-lucide="clock" class="w-3 h-3"></i></div><span>${lecture.duration}</span></div>
+                         <div class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-500 px-4 py-2 rounded-full shadow-lg shadow-emerald-500/20 group-hover:bg-emerald-600 transition-all group-hover:scale-105">${TEXTS.listen} <i data-lucide="play" class="w-3 h-3 fill-current"></i></div>
                     </div>
                 </div>
                 <div class="absolute bottom-0 left-0 w-full h-1 ${catColor} opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-            `;
-        }
+            </div>`;
+        };
 
-        function renderEmptyState() {
-            return `
-            <div class="col-span-full text-center py-20 opacity-50">
-                <div class="inline-block p-4 rounded-full bg-gray-100 dark:bg-slate-800 mb-2">
-                    <i data-lucide="search" class="w-6 h-6"></i>
-                </div>
-                <p class="text-lg font-medium">${TEXTS.noResults}</p>
-            </div>
-            `;
-        }
+        const renderEmptyState = () => `<div class="col-span-full text-center py-20 opacity-50"><div class="inline-block p-4 rounded-full bg-gray-100 dark:bg-slate-800 mb-2"><i data-lucide="search" class="w-6 h-6"></i></div><p class="text-lg font-medium">${TEXTS.noResults}</p></div>`;
 
-        function renderFooter() {
-            return `
-            <footer class="py-8 text-center text-sm opacity-60 border-t ${state.darkMode ? 'border-slate-800' : 'border-stone-200'}">
-                <div class="container mx-auto px-4">
-                    <p class="font-medium tracking-wide">${TEXTS.footerText}</p>
-                </div>
-            </footer>
-            `;
-        }
+        const renderFooter = () => `<footer class="py-8 text-center text-sm opacity-60 border-t border-stone-200 dark:border-slate-800"><div class="container mx-auto px-4"><p class="font-medium tracking-wide">${TEXTS.footerText}</p></div></footer>`;
 
-        function renderDetail() {
+        const renderDetail = () => {
             const l = state.selectedLecture;
-            const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
-            const titleColor = state.darkMode ? 'text-emerald-100' : 'text-emerald-900';
-            let badgeClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
-            if (l.category === 'seerat') badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
-            else if (l.category === 'halakah') badgeClass = 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200';
-            
-            const playerBg = state.darkMode ? 'bg-slate-900' : 'bg-stone-50';
-            const resourcesHTML = l.content.resources.length > 0 
-                ? `<ul class="space-y-3">` + l.content.resources.map(res => `
-                    <li><a href="${res.url}" class="flex items-center gap-3 text-sm p-4 rounded-xl transition-all duration-200 border border-transparent hover:shadow-md ${state.darkMode ? 'bg-slate-700/50 hover:bg-slate-700 text-emerald-400' : 'bg-white hover:border-emerald-100 text-emerald-800 shadow-sm'}">
-                        <div class="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><i data-lucide="external-link" class="w-4 h-4"></i></div>
-                        <span class="font-medium">${res.label}</span>
-                    </a></li>
-                  `).join('') + `</ul>`
-                : `<p class="text-sm opacity-50 italic">কোনো নোট যুক্ত করা হয়নি</p>`;
-
+            let badgeClass = l.category === 'seerat' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : (l.category === 'halakah' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200');
+            const resourcesHTML = l.content.resources.length > 0 ? `<ul class="space-y-3">` + l.content.resources.map(res => `<li><a href="${res.url}" class="flex items-center gap-3 text-sm p-4 rounded-xl transition-all duration-200 border border-transparent hover:shadow-md bg-white hover:border-emerald-100 text-emerald-800 shadow-sm dark:bg-slate-700/50 dark:hover:bg-slate-700 dark:text-emerald-400"><div class="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><i data-lucide="external-link" class="w-4 h-4"></i></div><span class="font-medium">${res.label}</span></a></li>`).join('') + `</ul>` : `<p class="text-sm opacity-50 italic">কোনো নোট যুক্ত করা হয়নি</p>`;
             return `
             <main class="container mx-auto px-4 py-6 md:py-10 min-h-[calc(100vh-140px)] animate-fade-in">
                 <div class="max-w-4xl mx-auto space-y-6">
-                    <button onclick="actions.goHome()" class="flex items-center justify-center gap-2 text-sm font-bold hover:text-emerald-500 transition-colors ${state.darkMode ? 'text-slate-400' : 'text-slate-600'}">
-                        <i data-lucide="arrow-left" class="w-4 h-4"></i> ${TEXTS.back}
-                    </button>
-
-                    <div class="rounded-2xl p-6 md:p-8 border shadow-soft ${cardBg}">
-                        
+                    <button onclick="actions.goHome()" class="flex items-center justify-center gap-2 text-sm font-bold hover:text-emerald-500 transition-colors text-slate-600 dark:text-slate-400"><i data-lucide="arrow-left" class="w-4 h-4"></i> ${TEXTS.back}</button>
+                    <div class="rounded-2xl p-6 md:p-8 border shadow-soft bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
                         <div class="mb-8 space-y-3">
-                            <div class="flex flex-wrap gap-3 items-center mb-3">
+                             <div class="flex flex-wrap gap-3 items-center mb-3">
                                 <span class="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${badgeClass}">${TEXTS[l.category]}</span>
                                 <span class="text-xs opacity-60 flex items-center gap-1 font-medium"><i data-lucide="calendar" class="w-3 h-3"></i> ${l.date}</span>
                                 <span class="text-xs opacity-60 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3 h-3"></i> ${l.duration}</span>
                             </div>
-                            <h1 class="text-2xl md:text-4xl font-bold ${titleColor} leading-tight">${l.content.title}</h1>
+                            <h1 class="text-2xl md:text-4xl font-bold leading-tight text-emerald-900 dark:text-emerald-100">${l.content.title}</h1>
                             <p class="opacity-80 text-lg leading-relaxed">${l.content.description}</p>
                         </div>
-
-                        <div class="p-6 rounded-2xl mb-10 flex flex-col items-center justify-center gap-6 shadow-inner ${playerBg}">
+                        <div class="p-6 rounded-2xl mb-10 flex flex-col items-center justify-center gap-6 shadow-inner bg-stone-50 dark:bg-slate-900">
                             <div class="w-full flex flex-col items-center text-center gap-4">
-                                ${state.playerMode === 'embed' ? `
-                                    <div class="w-full max-w-3xl bg-emerald-900 rounded-xl overflow-hidden shadow-2xl relative animate-fade-in ring-1 ring-emerald-900/50">
-                                        <div class="p-2 text-center text-xs text-white/80 bg-emerald-800/80 backdrop-blur-sm flex items-center justify-center gap-2">
-                                            <i data-lucide="info" class="w-3 h-3"></i> গুগল ড্রাইভের বড় ফাইলের ক্ষেত্রে "Virus Scan Warning" দেখানো স্বাভাবিক।
-                                        </div>
-                                        <iframe src="${getDriveEmbedLink(l.driveLink)}" class="w-full h-[120px] border-0" allow="autoplay" loading="lazy" title="Audio Player"></iframe>
-                                    </div>
-                                ` : ''}
-                                <div class="flex flex-col items-center gap-3 w-full max-w-md">
-                                    <a href="${l.driveLink}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95">
-                                        <i data-lucide="download" class="w-5 h-5"></i> ${TEXTS.playOnDrive} / ${TEXTS.download}
-                                    </a>
-                                </div>
+                                ${state.playerMode === 'embed' ? `<div class="w-full max-w-3xl bg-emerald-900 rounded-xl overflow-hidden shadow-2xl relative animate-fade-in ring-1 ring-emerald-900/50"><div class="p-2 text-center text-xs text-white/80 bg-emerald-800/80 backdrop-blur-sm flex items-center justify-center gap-2"><i data-lucide="info" class="w-3 h-3"></i> গুগল ড্রাইভের বড় ফাইলের ক্ষেত্রে "Virus Scan Warning" দেখানো স্বাভাবিক।</div><iframe src="${getDriveEmbedLink(l.driveLink)}" class="w-full h-[120px] border-0" allow="autoplay" loading="lazy" title="Audio Player"></iframe></div>` : ''}
+                                <div class="flex flex-col items-center gap-3 w-full max-w-md"><a href="${l.driveLink}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95"><i data-lucide="download" class="w-5 h-5"></i> ${TEXTS.playOnDrive} / ${TEXTS.download}</a></div>
                             </div>
                         </div>
-
-                        ${l.content.syllabus ? `
-                        <div class="p-6 rounded-2xl border-l-4 shadow-sm mb-10 ${state.darkMode ? 'bg-indigo-900/20 border-indigo-500 text-indigo-100' : 'bg-indigo-50 border-indigo-500 text-indigo-900'}">
-                            <div class="flex items-start gap-4">
-                                <div class="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg shrink-0">
-                                    <i data-lucide="book-marked" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-lg mb-2">${TEXTS.syllabus}</h3>
-                                    <p class="leading-relaxed opacity-90 font-medium">${l.content.syllabus}</p>
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-gray-700 opacity-80">
-                                <i data-lucide="folder-open" class="w-5 h-5 text-emerald-500"></i> ${TEXTS.resources}
-                            </h3>
-                            ${resourcesHTML}
-                        </div>
-
+                        ${l.content.syllabus ? `<div class="p-6 rounded-2xl border-l-4 shadow-sm mb-10 bg-indigo-50 border-indigo-500 text-indigo-900 dark:bg-indigo-900/20 dark:text-indigo-100"><div class="flex items-start gap-4"><div class="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg shrink-0"><i data-lucide="book-marked" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i></div><div><h3 class="font-bold text-lg mb-2">${TEXTS.syllabus}</h3><p class="leading-relaxed opacity-90 font-medium">${l.content.syllabus}</p></div></div></div>` : ''}
+                        <div class="space-y-4"><h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-gray-700 opacity-80"><i data-lucide="folder-open" class="w-5 h-5 text-emerald-500"></i> ${TEXTS.resources}</h3>${resourcesHTML}</div>
                     </div>
                 </div>
-            </main>
-            `;
-        }
+            </main>`;
+        };
 
-        function renderPasswordPrompt() {
-            const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
-            const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
-            
-            return `
-            <div class="min-h-screen ${bgClass} flex flex-col items-center justify-center p-6 animate-fade-in">
-                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden ${cardBg} border p-8 relative">
-                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition">
-                        <i data-lucide="x" class="w-5 h-5 opacity-60"></i>
-                    </button>
-                    
+        const renderPasswordPrompt = () => `
+            <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden border p-8 relative bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
+                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5 opacity-60"></i></button>
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="lock" class="w-8 h-8"></i>
-                        </div>
-                        <h2 class="text-xl font-bold mb-2">আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ</h2>
-                        <p class="text-sm opacity-60">কুইজটিতে অংশগ্রহণ করতে পাসওয়ার্ড প্রয়োজন</p>
+                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock" class="w-8 h-8"></i></div>
+                        <h2 class="text-xl font-bold mb-2">আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ</h2><p class="text-sm opacity-60">কুইজটিতে অংশগ্রহণ করতে পাসওয়ার্ড প্রয়োজন</p>
                     </div>
-
                     <div class="space-y-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold opacity-80 block">পাসওয়ার্ড</label>
-                            <input type="password" id="quiz-pass-input" placeholder="পাসওয়ার্ড লিখুন..." 
-                                class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition ${state.darkMode ? 'border-slate-600 placeholder-slate-500' : 'border-gray-300 placeholder-gray-400'}"
-                                onkeyup="if(event.key === 'Enter') actions.verifyPassword()">
-                        </div>
-                        
-                        <p id="pass-error-msg" class="text-rose-500 text-sm font-bold text-center hidden animate-pulse">
-                            ভুল পাসওয়ার্ড! অনুগ্রহ করে উস্তায জীর সাথে যোগাযোগ করুন।
-                        </p>
-
-                        <button onclick="actions.verifyPassword()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-2">
-                            নিশ্চিত করুন <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                        </button>
+                        <div class="space-y-2"><label class="text-sm font-bold opacity-80 block">পাসওয়ার্ড</label><input type="password" id="quiz-pass-input" placeholder="পাসওয়ার্ড লিখুন..." class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500" onkeyup="if(event.key === 'Enter') actions.verifyPassword()"></div>
+                        <p id="pass-error-msg" class="text-rose-500 text-sm font-bold text-center hidden animate-pulse">ভুল পাসওয়ার্ড! অনুগ্রহ করে উস্তায জীর সাথে যোগাযোগ করুন।</p>
+                        <button onclick="actions.verifyPassword()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-2">নিশ্চিত করুন <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
                     </div>
                 </div>
-            </div>
-            `;
-        }
+            </div>`;
 
-        function renderQuizRegistration() {
-            const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
-            const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
-            return `
-            <div class="min-h-screen ${bgClass} flex flex-col items-center justify-center p-6 animate-fade-in">
-                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden ${cardBg} border p-8 relative">
-                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition">
-                        <i data-lucide="x" class="w-5 h-5 opacity-60"></i>
-                    </button>
-                    
+        const renderQuizRegistration = () => `
+            <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden border p-8 relative bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
+                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5 opacity-60"></i></button>
                     <div class="text-center mb-8">
                         <p class="font-serif text-2xl text-emerald-600 dark:text-emerald-400 mb-4 font-bold">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
-                        
-                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="user-plus" class="w-8 h-8"></i>
-                        </div>
-                        <h2 class="text-2xl font-bold mb-2">${TEXTS.enterDetails}</h2>
-                        <p class="text-sm opacity-60">কুইজ শুরু করার আগে দয়া করে আপনার পরিচয় দিন</p>
+                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="user-plus" class="w-8 h-8"></i></div>
+                        <h2 class="text-2xl font-bold mb-2">${TEXTS.enterDetails}</h2><p class="text-sm opacity-60">কুইজ শুরু করার আগে দয়া করে আপনার পরিচয় দিন</p>
                     </div>
-
                     <div class="space-y-5">
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold opacity-80 block">${TEXTS.nameLabel}</label>
-                            <input type="text" id="reg-name" placeholder="${TEXTS.namePlaceholder}" 
-                                class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition ${state.darkMode ? 'border-slate-600 placeholder-slate-500' : 'border-gray-300 placeholder-gray-400'}">
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold opacity-80 block">${TEXTS.guardianLabel}</label>
-                            <input type="text" id="reg-guardian" placeholder="${TEXTS.guardianPlaceholder}" 
-                                class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition ${state.darkMode ? 'border-slate-600 placeholder-slate-500' : 'border-gray-300 placeholder-gray-400'}">
-                        </div>
-
-                        <button onclick="actions.submitRegistration()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4">
-                            ${TEXTS.start} <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                        </button>
+                        <div class="space-y-2"><label class="text-sm font-bold opacity-80 block">${TEXTS.nameLabel}</label><input type="text" id="reg-name" placeholder="${TEXTS.namePlaceholder}" class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500"></div>
+                        <div class="space-y-2"><label class="text-sm font-bold opacity-80 block">${TEXTS.guardianLabel}</label><input type="text" id="reg-guardian" placeholder="${TEXTS.guardianPlaceholder}" class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500"></div>
+                        <button onclick="actions.submitRegistration()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4">${TEXTS.start} <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
                     </div>
                 </div>
-            </div>
-            `;
-        }
+            </div>`;
 
-        function renderQuiz() {
-            const qState = state.quiz;
-            const quizData = qState.questions; 
+        // -- QUIZ & REVIEW --
+        const getOptionClass = (isSelected, isRight, isReview) => {
+             if (isReview) {
+                 if (isRight) return "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-500/30 dark:text-emerald-300";
+                 if (isSelected && !isRight) return "bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/30 dark:border-rose-500/30 dark:text-rose-300";
+                 return "border-gray-100 text-gray-500 dark:border-slate-700 dark:opacity-50";
+             } else {
+                 // Active Quiz
+                 if (isSelected) return "bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 shadow-md dark:bg-emerald-900/40 dark:border-emerald-500 dark:ring-emerald-500";
+                 return "bg-white border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/30 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-750";
+             }
+        };
+
+        const renderQuiz = () => {
+            const { questions, userAnswers, score, isFinished, isReviewing, timeLeft, userName, userGuardian } = state.quiz;
             const banglaIndices = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ", "ঝ", "ঞ", "ট", "ঠ"];
-            
-            const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
-            const cardBg = state.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-stone-200';
 
-            if (qState.isReviewing) {
-                 return `
-                <div class="min-h-screen ${bgClass} animate-fade-in pb-20">
-                    <div class="p-4 md:px-8 border-b ${state.darkMode ? 'border-slate-700 bg-slate-800/95' : 'border-stone-200 bg-white/95'} backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-sm">
-                        <button onclick="actions.exitReview()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2">
-                            <i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span>
-                        </button>
-                        <div class="font-bold text-lg">উত্তরপত্র পর্যালোচনা</div>
-                        <div class="w-10"></div> 
+            // 1. REVIEW MODE
+            if (isReviewing) {
+                return `
+                <div class="min-h-screen pb-20 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                    <div class="p-4 md:px-8 border-b backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-sm border-stone-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
+                        <button onclick="actions.exitReview()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2"><i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span></button>
+                        <div class="font-bold text-lg">উত্তরপত্র পর্যালোচনা</div><div class="w-10"></div>
                     </div>
-
-                    <div class="max-w-3xl mx-auto p-4 flex justify-end">
-                        <button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-                            <i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}
-                        </button>
-                    </div>
-
+                    <div class="max-w-3xl mx-auto p-4 flex justify-end"><button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center justify-center gap-2"><i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}</button></div>
                     <div class="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
-                        ${quizData.map((q, idx) => {
-                            const userAnswers = qState.userAnswers[idx] || [];
-                            const isMultiple = q.correctIndices && q.correctIndices.length > 0;
-                            
-                            let isCorrect = false;
-                            if (isMultiple) {
-                                isCorrect = userAnswers.length === q.correctIndices.length && userAnswers.every(val => q.correctIndices.includes(val));
-                            } else {
-                                isCorrect = userAnswers[0] === q.correctIndex;
-                            }
-
-                            const cardBorder = isCorrect ? 'border-emerald-500' : 'border-rose-500';
-                            const iconBg = isCorrect ? 'bg-emerald-500' : 'bg-rose-500';
-                            const icon = isCorrect ? 'check' : 'x';
+                        ${questions.map((q, idx) => {
+                            const uAns = userAnswers[idx] || [];
+                            const isMultiple = q.correctIndices.length > 1;
+                            const isCorrect = isMultiple ? (uAns.length === q.correctIndices.length && uAns.every(v => q.correctIndices.includes(v))) : uAns[0] === q.correctIndex;
                             return `
-                            <div class="rounded-2xl border-l-4 ${cardBorder} shadow-sm bg-white dark:bg-slate-800 overflow-hidden">
+                            <div class="rounded-2xl border-l-4 shadow-sm overflow-hidden bg-white dark:bg-slate-800 ${isCorrect ? 'border-emerald-500' : 'border-rose-500'}">
                                 <div class="p-5 flex gap-4">
-                                    <div class="shrink-0 mt-0.5">
-                                        <div class="w-6 h-6 rounded-full ${iconBg} text-white flex items-center justify-center">
-                                            <i data-lucide="${icon}" class="w-4 h-4"></i>
-                                        </div>
-                                    </div>
+                                    <div class="shrink-0 mt-0.5"><div class="w-6 h-6 rounded-full text-white flex items-center justify-center ${isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}"><i data-lucide="${isCorrect ? 'check' : 'x'}" class="w-4 h-4"></i></div></div>
                                     <div class="space-y-4 w-full">
                                         <h4 class="font-bold text-lg leading-relaxed"><span class="opacity-40 mr-2">${toBanglaDigit(idx + 1)}.</span>${q.question}</h4>
-                                        
                                         <div class="space-y-2">
                                             ${q.options.map((opt, optIdx) => {
-                                                const isSelected = userAnswers.includes(optIdx);
                                                 const isRight = isMultiple ? q.correctIndices.includes(optIdx) : optIdx === q.correctIndex;
-                                                let style = "p-3 rounded-lg border flex justify-between items-center text-sm ";
-                                                if (isRight) {
-                                                    style += state.darkMode ? "bg-emerald-900/30 border-emerald-500/30 text-emerald-300" : "bg-emerald-50 border-emerald-200 text-emerald-800";
-                                                } else if (isSelected && !isRight) {
-                                                    style += state.darkMode ? "bg-rose-900/30 border-rose-500/30 text-rose-300" : "bg-rose-50 border-rose-200 text-rose-800";
-                                                } else {
-                                                    style += state.darkMode ? "border-slate-700 opacity-50" : "border-gray-100 text-gray-500";
-                                                }
-
-                                                return `<div class="${style}">
-                                                    <span>${opt}</span>
-                                                    ${isRight ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-100">সঠিক</span>' : ''}
-                                                    ${isSelected && !isRight ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-100">আপনার উত্তর</span>' : ''}
-                                                </div>`;
+                                                const isSel = uAns.includes(optIdx);
+                                                return `<div class="p-3 rounded-lg border flex justify-between items-center text-sm ${getOptionClass(isSel, isRight, true)}"><span>${opt}</span>${isRight ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">সঠিক</span>' : ''}${isSel && !isRight ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-100">আপনার উত্তর</span>' : ''}</div>`;
                                             }).join('')}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            `;
+                            </div>`;
                         }).join('')}
                     </div>
-                </div>
-                `;
+                </div>`;
             }
-            
-            if (qState.isFinished) {
-                const percentage = Math.round((qState.score / quizData.length) * 100);
-                let message = "", icon = "", colorClass = "";
-                if (percentage >= 80) { 
-                    message = "মাশাআল্লাহ! দুর্দান্ত হয়েছে।";
-                    icon = "trophy"; 
-                    colorClass = "text-yellow-500";
-                } else if (percentage >= 50) { 
-                    message = "ভালো হয়েছে, তবে আরও ভালো করা সম্ভব।";
-                    icon = "thumbs-up"; 
-                    colorClass = "text-emerald-500";
-                } else { 
-                    message = "দুঃখিত! আরও মনোযোগ দিয়ে ক্লাসটি করুন।";
-                    icon = "book-open"; 
-                    colorClass = "text-slate-400";
-                }
 
+            // 2. RESULT MODE
+            if (isFinished) {
+                const pct = Math.round((score / questions.length) * 100);
+                let msg = pct >= 80 ? "মাশাআল্লাহ! দুর্দান্ত হয়েছে。" : (pct >= 50 ? "ভালো হয়েছে, তবে আরও ভালো করা সম্ভব。" : "দুঃখিত! আরও মনোযোগ দিয়ে ক্লাসটি করুন।");
+                let icon = pct >= 80 ? "trophy" : (pct >= 50 ? "thumbs-up" : "book-open");
+                let color = pct >= 80 ? "text-yellow-500" : (pct >= 50 ? "text-emerald-500" : "text-slate-400");
                 return `
-                <div class="min-h-screen ${bgClass} flex flex-col items-center justify-center p-6 animate-fade-in relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                        <div class="absolute top-10 left-10 w-32 h-32 bg-emerald-500 rounded-full blur-3xl"></div>
-                        <div class="absolute bottom-10 right-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl"></div>
-                    </div>
-
-                    <div class="max-w-lg w-full ${state.darkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/90 border-white'} border backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 text-center relative z-10">
-                        
-                        <div class="mb-6 pb-6 border-b ${state.darkMode ? 'border-slate-600' : 'border-gray-200'}">
-                            <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">${qState.userName}</h3>
-                            <p class="text-sm opacity-70">পিতা/স্বামী: <span class="font-medium">${qState.userGuardian}</span></p>
+                <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in relative overflow-hidden bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                    <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"><div class="absolute top-10 left-10 w-32 h-32 bg-emerald-500 rounded-full blur-3xl"></div><div class="absolute bottom-10 right-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl"></div></div>
+                    <div class="max-w-lg w-full border backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 text-center relative z-10 bg-white/90 border-white dark:bg-slate-800/80 dark:border-slate-700">
+                        <div class="mb-6 pb-6 border-b border-gray-200 dark:border-slate-600">
+                            <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">${userName}</h3><p class="text-sm opacity-70">পিতা/স্বামী: <span class="font-medium">${userGuardian}</span></p>
                         </div>
-                        
-                        <div class="relative inline-block mb-6">
-                            <div class="absolute inset-0 bg-current opacity-20 rounded-full animate-ping ${colorClass}"></div>
-                            <div class="w-24 h-24 rounded-full ${state.darkMode ? 'bg-slate-700' : 'bg-slate-50'} flex items-center justify-center shadow-inner relative z-10">
-                                <i data-lucide="${icon}" class="w-10 h-10 ${colorClass}"></i>
-                            </div>
-                        </div>
-
+                        <div class="relative inline-block mb-6"><div class="absolute inset-0 bg-current opacity-20 rounded-full animate-ping ${color}"></div><div class="w-24 h-24 rounded-full flex items-center justify-center shadow-inner relative z-10 bg-slate-50 dark:bg-slate-700"><i data-lucide="${icon}" class="w-10 h-10 ${color}"></i></div></div>
                         <h2 class="text-xl font-bold opacity-60 uppercase tracking-widest mb-2">${TEXTS.yourScore}</h2>
-                        
-                        <div class="flex items-baseline justify-center gap-1 mb-6">
-                            <span class="text-7xl font-black ${colorClass}">${qState.score}</span>
-                            <span class="text-3xl font-bold opacity-30">/ ${quizData.length}</span>
-                        </div>
-
-                        <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-8 overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-1000 ease-out ${percentage >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-rose-400 to-rose-600'}" style="width: ${percentage}%"></div>
-                        </div>
-
-                        <div class="p-4 rounded-xl ${state.darkMode ? 'bg-slate-700/50' : 'bg-slate-100'} mb-8">
-                            <p class="text-lg font-medium leading-relaxed">"${message}"</p>
-                        </div>
-                        
+                        <div class="flex items-baseline justify-center gap-1 mb-6"><span class="text-7xl font-black ${color}">${score}</span><span class="text-3xl font-bold opacity-30">/ ${questions.length}</span></div>
+                        <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-8 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ease-out ${pct >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-rose-400 to-rose-600'}" style="width: ${pct}%"></div></div>
+                        <div class="p-4 rounded-xl mb-8 bg-slate-100 dark:bg-slate-700/50"><p class="text-lg font-medium leading-relaxed">"${msg}"</p></div>
                         <div class="flex flex-col gap-3 w-full">
-                            <button onclick="actions.viewLeaderboard()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}
-                            </button>
-                            
+                            <button onclick="actions.viewLeaderboard()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
                             <div class="grid grid-cols-2 gap-3 mt-2">
-                                <button onclick="actions.reviewQuizAnswers()" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                    <i data-lucide="list-checks" class="w-5 h-5"></i> উত্তর দেখুন
-                                </button>
-                                
-                                <button onclick="actions.goHome()" class="py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 font-bold transition flex items-center justify-center gap-2">
-                                    <i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}
-                                </button>
+                                <button onclick="actions.reviewQuizAnswers()" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="list-checks" class="w-5 h-5"></i> উত্তর দেখুন</button>
+                                <button onclick="actions.goHome()" class="py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 font-bold transition flex items-center justify-center gap-2"><i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}</button>
                             </div>
                         </div>
-
                     </div>
-                </div>
-                `;
+                </div>`;
             }
 
+            // 3. ACTIVE QUIZ MODE
             return `
-            <div class="min-h-screen flex flex-col ${bgClass} animate-fade-in">
-                <!-- Top Header -->
-                <div class="px-2 py-3 md:px-6 border-b ${state.darkMode ? 'border-slate-700 bg-slate-800' : 'border-stone-200 bg-white'} flex items-center justify-between sticky top-0 z-20 shadow-sm transition-all">
-                    
-                    <!-- Left: Back Button (Fixed width container for balance) -->
-                    <div class="w-10 md:w-20 shrink-0">
-                        <button onclick="actions.exitQuiz()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center">
-                            <i data-lucide="arrow-left" class="w-6 h-6"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Center Cluster: Progress - Timer - Submit -->
+            <div class="min-h-screen flex flex-col animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                <div class="px-2 py-3 md:px-6 border-b flex items-center justify-between sticky top-0 z-20 shadow-sm transition-all border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+                    <div class="w-10 md:w-20 shrink-0"><button onclick="actions.exitQuiz()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center"><i data-lucide="arrow-left" class="w-6 h-6"></i></button></div>
                     <div class="flex-1 flex items-center justify-center gap-6 md:gap-16">
-                        
-                        <!-- Progress -->
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="text-xs md:text-sm font-bold opacity-60 hidden sm:block">অগ্রগতি:</span>
-                            <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600">
-                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                                <span class="text-sm md:text-base font-bold text-emerald-600 dark:text-emerald-400">
-                                    ${toBanglaDigit(Object.keys(qState.userAnswers).length)}<span class="opacity-40 text-xs mx-0.5">/</span>${toBanglaDigit(quizData.length)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Timer (Fixed Min-Width to prevent jumping) -->
-                         <div class="flex items-center justify-center min-w-[120px] md:min-w-[150px] gap-2 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-900/30">
-                             <i data-lucide="timer" class="w-4 h-4 text-red-500 animate-pulse"></i>
-                             <span class="text-lg md:text-xl font-black text-red-600 dark:text-red-400 font-mono tracking-wider" id="quiz-timer">
-                                 ${formatTime(qState.timeLeft)}
-                             </span>
-                         </div>
-
-                        <!-- Submit Button -->
-                        <button 
-                            onclick="actions.submitAllAnswers()" 
-                            class="shrink-0 px-3 py-1.5 md:px-5 md:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold shadow-lg disabled:opacity-50 disabled:grayscale transition-all transform active:scale-95 whitespace-nowrap flex items-center justify-center gap-2" 
-                            ${Object.keys(qState.userAnswers).length === 0 ? 'disabled' : ''}
-                        >
-                            <span class="hidden sm:inline">জমা দিন</span> <span class="sm:hidden">জমা</span> <i data-lucide="send" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
-                        </button>
-
+                        <div class="flex items-center gap-2 shrink-0"><span class="text-xs md:text-sm font-bold opacity-60 hidden sm:block">অগ্রগতি:</span><div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-sm md:text-base font-bold text-emerald-600 dark:text-emerald-400">${toBanglaDigit(Object.keys(userAnswers).length)}<span class="opacity-40 text-xs mx-0.5">/</span>${toBanglaDigit(questions.length)}</span></div></div>
+                        <div class="flex items-center justify-center min-w-[120px] md:min-w-[150px] gap-2 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-900/30"><i data-lucide="timer" class="w-4 h-4 text-red-500 animate-pulse"></i><span class="text-lg md:text-xl font-black text-red-600 dark:text-red-400 font-mono tracking-wider" id="quiz-timer">${formatTime(timeLeft)}</span></div>
+                        <button onclick="actions.submitAllAnswers()" class="shrink-0 px-3 py-1.5 md:px-5 md:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold shadow-lg disabled:opacity-50 disabled:grayscale transition-all transform active:scale-95 whitespace-nowrap flex items-center justify-center gap-2" ${Object.keys(userAnswers).length === 0 ? 'disabled' : ''}><span class="hidden sm:inline">জমা দিন</span> <span class="sm:hidden">জমা</span> <i data-lucide="send" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button>
                     </div>
-
-                    <!-- Right Spacer (Matches Left Width for perfect centering) -->
                     <div class="w-10 md:w-20 shrink-0"></div> 
                 </div>
-
                 <div class="flex-1 p-4 md:p-8 max-w-3xl mx-auto w-full space-y-12 pb-20">
-                    
-                    <!-- User Info Banner -->
-                    <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-lg p-3 flex items-center justify-center gap-2 text-sm text-emerald-800 dark:text-emerald-200 mb-6">
-                        <i data-lucide="user" class="w-4 h-4 opacity-50"></i>
-                        <span>পরীক্ষার্থী: <span class="font-bold">${qState.userName}</span></span>
-                    </div>
-
-                    ${quizData.map((q, qIdx) => {
-                        const isMultiple = q.correctIndices && q.correctIndices.length > 0;
-                        const userAnswers = qState.userAnswers[qIdx] || [];
-
+                    <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-lg p-3 flex items-center justify-center gap-2 text-sm text-emerald-800 dark:text-emerald-200 mb-6"><i data-lucide="user" class="w-4 h-4 opacity-50"></i><span>পরীক্ষার্থী: <span class="font-bold">${userName}</span></span></div>
+                    ${questions.map((q, qIdx) => {
+                        const isMultiple = q.correctIndices.length > 1;
+                        const uAns = userAnswers[qIdx] || [];
                         return `
                         <div class="animate-fade-in" style="animation-delay: ${qIdx * 0.05}s">
-                            <div class="flex items-start gap-4 mb-6">
-                                <span class="flex items-center justify-center shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-sm shadow-md">${toBanglaDigit(qIdx + 1)}</span>
-                                <div class="space-y-1">
-                                    <h3 class="text-xl font-bold leading-relaxed">${q.question}</h3>
-                                    ${isMultiple ? '<span class="inline-block text-[10px] font-bold bg-amber-100 dark:bg-amber-900 dark:bg-opacity-40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded uppercase tracking-tighter">একাধিক উত্তর হতে পারে</span>' : ''}
-                                </div>
-                            </div>
-
+                            <div class="flex items-start gap-4 mb-6"><span class="flex items-center justify-center shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-sm shadow-md">${toBanglaDigit(qIdx + 1)}</span><div class="space-y-1"><h3 class="text-xl font-bold leading-relaxed">${q.question}</h3>${isMultiple ? '<span class="inline-block text-[10px] font-bold bg-amber-100 dark:bg-amber-900 dark:bg-opacity-40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded uppercase tracking-tighter">একাধিক উত্তর হতে পারে</span>' : ''}</div></div>
                             <div class="grid grid-cols-1 gap-3 pl-0 md:pl-12">
                                 ${q.options.map((option, optIdx) => {
-                                    const isSelected = userAnswers.includes(optIdx);
-                                    
-                                    // Option container styles
-                                    let optionClass = state.darkMode 
-                                        ? (isSelected ? 'bg-emerald-900/40 border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-750') 
-                                        : (isSelected ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 shadow-md' : 'bg-white border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/30 shadow-sm');
-                                    
-                                    // NEW: Distinct Badge Style for Alphabets (The Solution)
-                                    let badgeClass = state.darkMode
-                                        ? (isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 group-hover:bg-slate-600 group-hover:text-white')
-                                        : (isSelected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100 group-hover:text-emerald-700');
-
-                                    let marker = isMultiple 
-                                        ? (isSelected ? '<i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="square" class="w-5 h-5 opacity-30"></i>')
-                                        : (isSelected ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="circle" class="w-5 h-5 opacity-30"></i>');
-                                    
-                                    return `
-                                    <button 
-                                        onclick="actions.toggleQuizOption(${qIdx}, ${optIdx}, ${isMultiple})"
-                                        class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${optionClass}"
-                                    >
-                                        <div class="flex items-center gap-3">
-                                            <!-- Clearly visible badge -->
-                                            <div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">
-                                                ${banglaIndices[optIdx] || (optIdx + 1)}
-                                            </div>
-                                            <span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span>
-                                        </div>
-                                        <div class="shrink-0 pl-2">
-                                            ${marker}
-                                        </div>
-                                    </button>
-                                    `;
+                                    const isSelected = uAns.includes(optIdx);
+                                    let badgeClass = isSelected ? 'bg-emerald-600 text-white dark:bg-emerald-500' : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-slate-600 dark:group-hover:text-white';
+                                    let marker = isMultiple ? (isSelected ? '<i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="square" class="w-5 h-5 opacity-30"></i>') : (isSelected ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="circle" class="w-5 h-5 opacity-30"></i>');
+                                    return `<button onclick="actions.toggleQuizOption(${qIdx}, ${optIdx}, ${isMultiple})" class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${getOptionClass(isSelected, false, false)}"><div class="flex items-center gap-3"><div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">${banglaIndices[optIdx] || (optIdx + 1)}</div><span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span></div><div class="shrink-0 pl-2">${marker}</div></button>`;
                                 }).join('')}
                             </div>
-                        </div>
-                        `;
+                        </div>`;
                     }).join('<div class="w-full h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent my-10"></div>')}
                 </div>
-            </div>
-            `;
-        }
+            </div>`;
+        };
 
-        function renderLeaderboard() {
-            const bgClass = state.darkMode ? 'bg-slate-900 text-white' : 'bg-stone-50 text-stone-900';
-            const rowOdd = state.darkMode ? 'bg-slate-800/50' : 'bg-gray-50';
-            const rowEven = state.darkMode ? 'bg-slate-900/50' : 'bg-white';
-
+        const renderLeaderboard = () => {
+            const data = state.leaderboardData;
             return `
-            <div class="min-h-screen ${bgClass} flex flex-col animate-fade-in">
-                <div class="p-4 md:px-8 border-b ${state.darkMode ? 'border-slate-700 bg-slate-800/95' : 'border-stone-200 bg-white/95'} backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-sm">
-                    <button onclick="actions.leaderboardBack()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2">
-                        <i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span>
-                    </button>
-                    <div class="font-bold text-lg flex items-center gap-2">
-                        <i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i> ${TEXTS.leaderboardTitle}
-                    </div>
-                    <div class="w-10"></div> 
+            <div class="min-h-screen flex flex-col animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
+                <div class="p-4 md:px-8 border-b flex items-center justify-between sticky top-0 z-30 shadow-sm backdrop-blur-md border-stone-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
+                    <button onclick="actions.leaderboardBack()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2"><i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span></button>
+                    <div class="font-bold text-lg flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i> ${TEXTS.leaderboardTitle}</div><div class="w-10"></div> 
                 </div>
-
-                <div class="max-w-4xl mx-auto px-4 md:px-8 pt-4 flex justify-end">
-                    <button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-                        <i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}
-                    </button>
-                </div>
-
+                <div class="max-w-4xl mx-auto px-4 md:px-8 pt-4 flex justify-end"><button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center justify-center gap-2"><i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}</button></div>
                 <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-                    <div class="rounded-2xl overflow-hidden border ${state.darkMode ? 'border-slate-700' : 'border-stone-200'} shadow-lg">
+                    <div class="rounded-2xl overflow-hidden border shadow-lg border-stone-200 dark:border-slate-700">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="${state.darkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-600 text-white'} uppercase text-base font-bold tracking-wider">
-                                        <th class="p-4 w-20 text-center">মেধাস্থান</th>
-                                        <th class="p-4 text-center">${TEXTS.name}</th>
-                                        <th class="p-4 text-center">${TEXTS.score}</th>
-                                        <th class="p-4 text-center">${TEXTS.submissionSerial}</th>
-                                        <th class="p-4 text-center">${TEXTS.timeTaken}</th>
-                                        <th class="p-4 text-center hidden sm:table-cell">${TEXTS.time}</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr class="uppercase text-base font-bold tracking-wider bg-emerald-600 text-white dark:bg-slate-800 dark:text-emerald-400"><th class="p-4 w-20 text-center">মেধাস্থান</th><th class="p-4 text-center">${TEXTS.name}</th><th class="p-4 text-center">${TEXTS.score}</th><th class="p-4 text-center">${TEXTS.submissionSerial}</th><th class="p-4 text-center">${TEXTS.timeTaken}</th><th class="p-4 text-center hidden sm:table-cell">${TEXTS.time}</th></tr></thead>
                                 <tbody>
-                                    ${state.leaderboardData.length > 0 ? state.leaderboardData.map((user, idx) => {
+                                    ${data.length > 0 ? data.map((user, idx) => {
                                         let rankDisplay = `<span class="font-bold opacity-50 text-xl">${toBanglaDigit(idx + 1)}</span>`;
-                                        if (idx === 0) {
-                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="crown" class="w-8 h-8 text-yellow-500 fill-yellow-500 animate-bounce"></i><span class="text-[10px] font-bold text-yellow-600 uppercase">১ম</span></div>`;
-                                        } else if (idx === 1) {
-                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-slate-400 fill-slate-300"></i><span class="text-[10px] font-bold text-slate-500 uppercase">২য়</span></div>`;
-                                        } else if (idx === 2) {
-                                            rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-amber-700 fill-amber-600"></i><span class="text-[10px] font-bold text-amber-800 uppercase">৩য়</span></div>`;
-                                        } else if (idx === 3) {
-                                            rankDisplay = `<div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto text-sm font-bold shadow-md ring-2 ring-emerald-200">৪</div>`;
-                                        } else if (idx === 4) {
-                                            rankDisplay = `<div class="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center mx-auto text-sm font-bold shadow-md ring-2 ring-teal-200">৫</div>`;
-                                        }
-
-                                        let rowClass = `border-b last:border-0 border-gray-200 dark:border-gray-700 ${idx % 2 === 0 ? rowEven : rowOdd} hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors`;
+                                        if (idx === 0) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="crown" class="w-8 h-8 text-yellow-500 fill-yellow-500 animate-bounce"></i><span class="text-[10px] font-bold text-yellow-600 uppercase">১ম</span></div>`;
+                                        else if (idx === 1) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-slate-400 fill-slate-300"></i><span class="text-[10px] font-bold text-slate-500 uppercase">২য়</span></div>`;
+                                        else if (idx === 2) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-amber-700 fill-amber-600"></i><span class="text-[10px] font-bold text-amber-800 uppercase">৩য়</span></div>`;
+                                        
+                                        let rowClass = `border-b last:border-0 border-gray-200 dark:border-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900/50' : 'bg-gray-50 dark:bg-slate-800/50'}`;
                                         if (idx === 0) rowClass += " bg-yellow-50/50 dark:bg-yellow-900/10";
-                                        else if (idx === 1) rowClass += " bg-slate-50/50 dark:bg-slate-900/20";
-                                        else if (idx === 2) rowClass += " bg-amber-50/50 dark:bg-amber-900/10";
-                                        
-                                        let durationText = "-";
-                                        if (user.timeTaken) {
-                                            const min = Math.floor(user.timeTaken / 60);
-                                            const sec = user.timeTaken % 60;
-                                            durationText = `${toBanglaDigit(min)} মি ${toBanglaDigit(sec)} সে`;
-                                        }
-
                                         const dateObj = new Date(user.timestamp);
-                                        const dateStr = dateObj.toLocaleString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-                                        const timeStr = dateObj.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-                                        
-                                        return `
-                                        <tr class="${rowClass}">
-                                            <td class="p-4 text-center align-middle">${rankDisplay}</td>
-                                            <td class="p-4 align-middle">
-                                                <div class="font-bold text-base md:text-lg">${user.name}</div>
-                                                <div class="text-xs opacity-60">${user.guardian || '-'}</div>
-                                            </td>
-                                            <td class="p-4 text-center align-middle">
-                                                <span class="inline-block px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-extrabold text-2xl shadow-sm">
-                                                    ${toBanglaDigit(user.score)}
-                                                </span>
-                                            </td>
-                                            <td class="p-4 text-center align-middle">
-                                                <span class="font-bold text-base md:text-lg opacity-70">
-                                                    ${toBanglaDigit(user.submissionSerial || '-')}
-                                                </span>
-                                            </td>
-                                            <td class="p-4 text-center align-middle font-medium text-emerald-600">
-                                                ${durationText}
-                                            </td>
-                                            <td class="p-4 text-center align-middle hidden sm:table-cell">
-                                                <div class="flex flex-col items-center text-stone-700 dark:text-stone-200">
-                                                    <span class="font-medium text-base">${dateStr}</span>
-                                                    <span class="text-sm font-medium opacity-90">${timeStr}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        `;
-                                    }).join('') : `
-                                        <tr>
-                                            <td colspan="6" class="p-10 text-center opacity-50">
-                                                এখনো কোনো ফলাফল জমা পড়েনি।
-                                            </td>
-                                        </tr>
-                                    `}
+                                        return `<tr class="${rowClass}"><td class="p-4 text-center align-middle">${rankDisplay}</td><td class="p-4 align-middle"><div class="font-bold text-base md:text-lg">${user.name}</div><div class="text-xs opacity-60">${user.guardian || '-'}</div></td><td class="p-4 text-center align-middle"><span class="inline-block px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-extrabold text-2xl shadow-sm">${toBanglaDigit(user.score)}</span></td><td class="p-4 text-center align-middle"><span class="font-bold text-base md:text-lg opacity-70">${toBanglaDigit(user.submissionSerial || '-')}</span></td><td class="p-4 text-center align-middle font-medium text-emerald-600">${user.timeTaken ? `${toBanglaDigit(Math.floor(user.timeTaken/60))} মি ${toBanglaDigit(user.timeTaken%60)} সে` : '-'}</td><td class="p-4 text-center align-middle hidden sm:table-cell"><div class="flex flex-col items-center text-stone-700 dark:text-stone-200"><span class="font-medium text-base">${dateObj.toLocaleString('bn-BD', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-')}</span><span class="text-sm font-medium opacity-90">${dateObj.toLocaleString('bn-BD', {hour:'numeric',minute:'numeric',second:'numeric',hour12:true})}</span></div></td></tr>`;
+                                    }).join('') : `<tr><td colspan="6" class="p-10 text-center opacity-50">এখনো কোনো ফলাফল জমা পড়েনি।</td></tr>`}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div>
-            `;
-        }
+            </div>`;
+        };
 
         const actions = {
             toggleTheme: () => { state.darkMode = !state.darkMode; render(); },
-            goHome: () => { 
-                if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
-                state.view = 'home'; state.selectedLecture = null; render(); 
-            },
+            goHome: () => { if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval); state.view = 'home'; state.selectedLecture = null; render(); },
             setFilter: (cat) => { state.filter = cat; render(); },
-            setSearch: (val) => { state.search = val; if(state.view === 'home') render(); },
-            selectLecture: (id) => { state.selectedLecture = COURSE_DATA.find(l => l.id === id); state.view = 'detail'; state.playbackRate = 1.0; window.scrollTo(0,0); render(); },
-            
-            startQuiz: async () => { 
-                if (ALL_QUIZZES.length === 0) {
-                     await fetchQuizData();
-                     if (ALL_QUIZZES.length === 0) {
-                         alert("কুইজ লোড করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।");
-                         return;
-                     }
-                }
-
-                const saved = getSavedQuizState();
-                if (saved) {
-                     actions.resumeQuiz();
-                     return;
-                }
-
-                state.quiz = {
-                    active: true,
-                    currentQuestion: 0, 
-                    score: 0, 
-                    selectedOption: null, 
-                    selectedOptions: [], 
-                    isAnswerChecked: false, 
-                    isFinished: false, 
-                    isReviewing: false,
-                    questions: [], 
-                    userAnswers: {},
-                    userName: "",
-                    userGuardian: "",
-                    startTime: null,
-                    endTime: null,
-                    expiryTime: null,
-                    timeLeft: QUIZ_TIME_LIMIT 
-                };
-
-                // PASSWORD CHECK Logic
-                if (QUIZ_PASSWORD && QUIZ_PASSWORD !== "") {
-                    state.view = 'quiz_password'; // Go to password screen first
-                    render();
-                    window.scrollTo(0, 0);
-                    return;
-                }
-
-                state.view = 'quiz_registration'; 
-                render(); 
-                window.scrollTo(0, 0); 
+            setSearch: (val) => { state.search = val; if (state.view === 'home') render(); },
+            selectLecture: (id) => { state.selectedLecture = COURSE_DATA.find(l => l.id === id); state.view = 'detail'; state.playbackRate = 1.0; window.scrollTo(0, 0); render(); },
+            startQuiz: async () => {
+                if (ALL_QUIZZES.length === 0) { await fetchQuizData(); if (ALL_QUIZZES.length === 0) { alert("কুইজ লোড করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।"); return; } }
+                const saved = getSavedQuizState(); if (saved) { actions.resumeQuiz(); return; }
+                state.quiz = { active: true, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timeLeft: QUIZ_TIME_LIMIT };
+                state.view = (QUIZ_PASSWORD && QUIZ_PASSWORD !== "") ? 'quiz_password' : 'quiz_registration'; render(); window.scrollTo(0, 0);
             },
-
             verifyPassword: () => {
                 const input = document.getElementById('quiz-pass-input');
-                const errorMsg = document.getElementById('pass-error-msg');
-                
-                if (!input) return;
-                
-                const val = input.value.trim();
-                
-                if (val === QUIZ_PASSWORD) {
-                    // Correct Password
-                    state.view = 'quiz_registration';
-                    render();
-                    window.scrollTo(0, 0);
-                } else {
-                    // Incorrect Password
-                    errorMsg.classList.remove('hidden');
-                    input.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
-                    // Shake effect or similar could be added here
-                    setTimeout(() => {
-                         input.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
-                    }, 2000);
-                }
+                if (input.value.trim() === QUIZ_PASSWORD) { state.view = 'quiz_registration'; render(); window.scrollTo(0, 0); } 
+                else { document.getElementById('pass-error-msg').classList.remove('hidden'); input.classList.add('border-rose-500', 'ring-1', 'ring-rose-500'); setTimeout(() => input.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500'), 2000); }
             },
-
             submitRegistration: () => {
-                const name = document.getElementById('reg-name').value.trim();
-                const guardian = document.getElementById('reg-guardian').value.trim();
-
-                if (!name || !guardian) {
-                    alert("দয়া করে উভয় ঘর পূরণ করুন।");
-                    return;
-                }
-
-                state.quiz.userName = name;
-                state.quiz.userGuardian = guardian;
-
-                state.quiz.questions = [...ALL_QUIZZES];
-                
-                // Initialize absolute timer
-                state.quiz.startTime = Date.now();
-                state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
-                
-                // Save Initial State
-                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz));
-
-                actions.startTimerLoop();
-                
-                state.view = 'quiz';
-                render();
-                window.scrollTo(0, 0);
+                const name = document.getElementById('reg-name').value.trim(), guardian = document.getElementById('reg-guardian').value.trim();
+                if (!name || !guardian) { alert("দয়া করে উভয় ঘর পূরণ করুন।"); return; }
+                state.quiz.userName = name; state.quiz.userGuardian = guardian; state.quiz.questions = [...ALL_QUIZZES]; state.quiz.startTime = Date.now(); state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
+                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz)); actions.startTimerLoop(); state.view = 'quiz'; render(); window.scrollTo(0, 0);
             },
-            
             startTimerLoop: () => {
-                 if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
-                 
-                 // Immediately calc once
-                 const now = Date.now();
-                 state.quiz.timeLeft = Math.max(0, Math.ceil((state.quiz.expiryTime - now) / 1000));
-                 
-                 state.quiz.timerInterval = setInterval(() => {
-                    const n = Date.now();
-                    const diff = Math.ceil((state.quiz.expiryTime - n) / 1000);
-                    
-                    if (diff <= 0) {
-                        state.quiz.timeLeft = 0;
-                        clearInterval(state.quiz.timerInterval);
-                        actions.submitAllAnswers(); 
-                    } else {
-                        state.quiz.timeLeft = diff;
-                        const timerEl = document.getElementById('quiz-timer');
-                        if (timerEl) timerEl.innerText = formatTime(state.quiz.timeLeft);
-                    }
-                }, 1000);
+                if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
+                const update = () => {
+                    const diff = Math.ceil((state.quiz.expiryTime - Date.now()) / 1000);
+                    if (diff <= 0) { state.quiz.timeLeft = 0; clearInterval(state.quiz.timerInterval); actions.submitAllAnswers(); } else { state.quiz.timeLeft = diff; const el = document.getElementById('quiz-timer'); if (el) el.innerText = formatTime(state.quiz.timeLeft); }
+                };
+                update(); state.quiz.timerInterval = setInterval(update, 1000);
             },
-
             resumeQuiz: () => {
-                 const saved = getSavedQuizState();
-                 if (!saved) {
-                     alert("সংরক্ষিত কুইজ পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।");
-                     state.view = 'home';
-                     render();
-                     return;
-                 }
-                 state.quiz = saved;
-                 actions.startTimerLoop();
-                 state.view = 'quiz';
-                 render();
-                 window.scrollTo(0,0);
+                const saved = getSavedQuizState();
+                if (!saved) { alert("সংরক্ষিত কুইজ পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।"); state.view = 'home'; render(); return; }
+                state.quiz = saved; actions.startTimerLoop(); state.view = 'quiz'; render(); window.scrollTo(0, 0);
             },
-            
             toggleQuizOption: (qIdx, optIdx, isMultiple) => {
-                const currentAnswers = state.quiz.userAnswers[qIdx] || [];
-                
-                if (isMultiple) {
-                    if (currentAnswers.includes(optIdx)) {
-                        state.quiz.userAnswers[qIdx] = currentAnswers.filter(i => i !== optIdx);
-                    } else {
-                        state.quiz.userAnswers[qIdx] = [...currentAnswers, optIdx];
-                    }
-                    if (state.quiz.userAnswers[qIdx].length === 0) delete state.quiz.userAnswers[qIdx];
-                } else {
-                    state.quiz.userAnswers[qIdx] = [optIdx];
-                }
-                
-                // Save Progress
-                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz));
-                render();
+                const current = state.quiz.userAnswers[qIdx] || [];
+                state.quiz.userAnswers[qIdx] = isMultiple ? (current.includes(optIdx) ? current.filter(i => i !== optIdx) : [...current, optIdx]) : [optIdx];
+                if (state.quiz.userAnswers[qIdx].length === 0) delete state.quiz.userAnswers[qIdx];
+                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz)); render();
             },
-            
             submitAllAnswers: () => {
                 if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
                 state.quiz.endTime = Date.now();
-                // Calculate time taken based on start time, not expiration
-                const timeTakenSeconds = Math.floor((state.quiz.endTime - state.quiz.startTime) / 1000);
-
                 let score = 0;
                 state.quiz.questions.forEach((q, idx) => {
-                    const userAns = state.quiz.userAnswers[idx] || [];
-                    const isMultiple = q.correctIndices && q.correctIndices.length > 0;
-                    
-                    if (isMultiple) {
-                        const userStr = userAns.sort().toString();
-                        const correctStr = q.correctIndices.sort().toString();
-                        if (userStr === correctStr) score++;
-                    } else {
-                        if (userAns.length > 0 && userAns[0] === q.correctIndex) score++;
-                    }
+                    const uAns = state.quiz.userAnswers[idx] || [];
+                    if (q.correctIndices.length > 1) { if (uAns.sort().toString() === q.correctIndices.sort().toString()) score++; } 
+                    else if (uAns.length > 0 && uAns[0] === q.correctIndex) score++;
                 });
-                state.quiz.score = score;
-                state.quiz.isFinished = true;
-                state.quiz.isReviewing = false; 
-                
-                // Clear saved state
+                state.quiz.score = score; state.quiz.isFinished = true; state.quiz.isReviewing = false;
                 localStorage.removeItem('seerat_quiz_state');
-                
                 if (currentUser) {
-                    try {
-                        addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), {
-                            name: state.quiz.userName,
-                            guardian: state.quiz.userGuardian,
-                            score: score,
-                            totalQuestions: state.quiz.questions.length,
-                            timestamp: Date.now(),
-                            timeTaken: timeTakenSeconds
-                        });
-                    } catch(e) { console.error("Save failed", e); }
+                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), { name: state.quiz.userName, guardian: state.quiz.userGuardian, score, totalQuestions: state.quiz.questions.length, timestamp: Date.now(), timeTaken: Math.floor((state.quiz.endTime - state.quiz.startTime) / 1000) }).catch(e => console.error(e));
                 }
-
-                window.scrollTo(0,0);
-                render();
+                window.scrollTo(0, 0); render();
             },
-
-            retryQuiz: () => {
-                actions.startQuiz();
-            },
-            
-            reviewQuizAnswers: () => {
-                state.quiz.isReviewing = true;
-                window.scrollTo(0,0);
-                render();
-            },
-            
-            exitReview: () => {
-                state.quiz.isReviewing = false;
-                window.scrollTo(0,0);
-                render();
-            },
-            
-            exitQuiz: () => { 
-                if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
-                state.view = 'home'; render(); 
-            },
-            
-            viewLeaderboard: () => {
-                state.view = 'leaderboard';
-                actions.fetchLeaderboardData();
-                render();
-                window.scrollTo(0, 0);
-            },
-            
-            leaderboardBack: () => {
-                if (state.quiz.isFinished) {
-                    state.view = 'quiz';
-                } else {
-                    state.view = 'home';
-                }
-                render();
-            },
-
+            reviewQuizAnswers: () => { state.quiz.isReviewing = true; window.scrollTo(0, 0); render(); },
+            exitReview: () => { state.quiz.isReviewing = false; window.scrollTo(0, 0); render(); },
+            exitQuiz: () => { if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval); state.view = 'home'; render(); },
+            viewLeaderboard: () => { state.view = 'leaderboard'; actions.fetchLeaderboardData(); render(); window.scrollTo(0, 0); },
+            leaderboardBack: () => { state.view = state.quiz.isFinished ? 'quiz' : 'home'; render(); },
             fetchLeaderboardData: () => {
                 if (!currentUser) return;
-                
                 if (unsubscribeLeaderboard) unsubscribeLeaderboard();
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                
-                unsubscribeLeaderboard = onSnapshot(q, (snapshot) => {
-                    let data = [];
-                    snapshot.forEach((doc) => {
-                        data.push(doc.data());
-                    });
-
-                    data.sort((a, b) => a.timestamp - b.timestamp);
-                    data = data.map((item, index) => ({
-                        ...item,
-                        submissionSerial: index + 1
-                    }));
-
-                    data.sort((a, b) => {
-                        if (b.score !== a.score) {
-                            return b.score - a.score;
-                        }
-                        return a.timestamp - b.timestamp;
-                    });
-
-                    state.leaderboardData = data;
-                    if(state.view === 'leaderboard') render();
-                }, (error) => {
-                    console.error("Leaderboard fetch error:", error);
+                unsubscribeLeaderboard = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), (snapshot) => {
+                    let data = []; snapshot.forEach(d => data.push(d.data()));
+                    state.leaderboardData = data.sort((a, b) => (b.score - a.score) || (a.timestamp - b.timestamp)).map((item, i) => ({ ...item, submissionSerial: i + 1 }));
+                    if (state.view === 'leaderboard') render();
                 });
             }
         };
 
         window.actions = actions;
-        function attachListeners() { }
-
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            state.darkMode = true;
-        }
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) state.darkMode = true;
         render();
-
     </script>
 </body>
 </html>

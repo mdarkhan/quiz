@@ -412,6 +412,7 @@
             quizTitle: "আপনার জ্ঞান যাচাই করুন",
             quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।",
             startQuiz: "কুইজ শুরু করুন",
+            resumeQuiz: "কুইজ চালিয়ে যান",
             question: "প্রশ্ন",
             next: "পরবর্তী",
             finish: "ফলাফল দেখুন",
@@ -468,6 +469,7 @@
                 userGuardian: "",
                 startTime: null,
                 endTime: null,
+                expiryTime: null, // New field for absolute expiration time
                 timerInterval: null,
                 timeLeft: 3600
             },
@@ -523,6 +525,7 @@
         };
 
         const formatTime = (seconds) => {
+            if (seconds < 0) seconds = 0;
             const m = Math.floor(seconds / 60);
             const s = seconds % 60;
             return `${toBanglaDigit(m)}:${toBanglaDigit(s < 10 ? '0' : '')}${toBanglaDigit(s)}`;
@@ -542,6 +545,22 @@
 
         const app = document.getElementById('app');
         const body = document.body;
+
+        // Helper: Get Saved Quiz State
+        const getSavedQuizState = () => {
+            try {
+                const saved = localStorage.getItem('seerat_quiz_state');
+                if (!saved) return null;
+                const parsed = JSON.parse(saved);
+                // Check if expired
+                if (parsed.expiryTime && parsed.expiryTime > Date.now()) {
+                    return parsed;
+                } else {
+                    localStorage.removeItem('seerat_quiz_state'); // Expired
+                    return null;
+                }
+            } catch (e) { return null; }
+        };
 
         function render() {
             if (state.darkMode) {
@@ -634,6 +653,11 @@
                 const matchesCategory = state.filter === 'all' || l.category === state.filter;
                 return matchesSearch && matchesCategory;
             });
+            
+            const savedState = getSavedQuizState();
+            const quizBtnText = savedState ? TEXTS.resumeQuiz : TEXTS.startGlobalQuiz;
+            const quizBtnAction = savedState ? "actions.resumeQuiz()" : "actions.startQuiz()";
+            const quizBtnIcon = savedState ? "play" : "play-circle";
 
             return `
             <main class="container mx-auto px-4 py-6 md:py-10 min-h-[calc(100vh-140px)] animate-fade-in">
@@ -661,8 +685,8 @@
                         <button onclick="actions.viewLeaderboard()" class="bg-teal-900 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none">
                             <i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}
                         </button>
-                        <button onclick="actions.startQuiz()" class="bg-white text-emerald-700 px-8 py-3 rounded-full font-bold hover:bg-white hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap">
-                            <i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}
+                        <button onclick="${quizBtnAction}" class="bg-white text-emerald-700 px-8 py-3 rounded-full font-bold hover:bg-white hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i data-lucide="${quizBtnIcon}" class="w-5 h-5"></i> ${quizBtnText}
                         </button>
                     </div>
                 </div>
@@ -1314,6 +1338,12 @@
                      }
                 }
 
+                const saved = getSavedQuizState();
+                if (saved) {
+                     actions.resumeQuiz();
+                     return;
+                }
+
                 state.quiz = {
                     active: true,
                     currentQuestion: 0, 
@@ -1327,6 +1357,9 @@
                     userAnswers: {},
                     userName: "",
                     userGuardian: "",
+                    startTime: null,
+                    endTime: null,
+                    expiryTime: null,
                     timeLeft: QUIZ_TIME_LIMIT 
                 };
 
@@ -1381,20 +1414,56 @@
 
                 state.quiz.questions = [...ALL_QUIZZES];
                 
+                // Initialize absolute timer
                 state.quiz.startTime = Date.now();
-                state.quiz.timerInterval = setInterval(() => {
-                    if (state.quiz.timeLeft > 0) {
-                        state.quiz.timeLeft--;
-                        const timerEl = document.getElementById('quiz-timer');
-                        if (timerEl) timerEl.innerText = formatTime(state.quiz.timeLeft);
-                    } else {
-                        clearInterval(state.quiz.timerInterval);
-                        actions.submitAllAnswers(); 
-                    }
-                }, 1000);
+                state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
+                
+                // Save Initial State
+                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz));
+
+                actions.startTimerLoop();
+                
                 state.view = 'quiz';
                 render();
                 window.scrollTo(0, 0);
+            },
+            
+            startTimerLoop: () => {
+                 if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
+                 
+                 // Immediately calc once
+                 const now = Date.now();
+                 state.quiz.timeLeft = Math.max(0, Math.ceil((state.quiz.expiryTime - now) / 1000));
+                 
+                 state.quiz.timerInterval = setInterval(() => {
+                    const n = Date.now();
+                    const diff = Math.ceil((state.quiz.expiryTime - n) / 1000);
+                    
+                    if (diff <= 0) {
+                        state.quiz.timeLeft = 0;
+                        clearInterval(state.quiz.timerInterval);
+                        actions.submitAllAnswers(); 
+                    } else {
+                        state.quiz.timeLeft = diff;
+                        const timerEl = document.getElementById('quiz-timer');
+                        if (timerEl) timerEl.innerText = formatTime(state.quiz.timeLeft);
+                    }
+                }, 1000);
+            },
+
+            resumeQuiz: () => {
+                 const saved = getSavedQuizState();
+                 if (!saved) {
+                     alert("সংরক্ষিত কুইজ পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।");
+                     state.view = 'home';
+                     render();
+                     return;
+                 }
+                 state.quiz = saved;
+                 actions.startTimerLoop();
+                 state.view = 'quiz';
+                 render();
+                 window.scrollTo(0,0);
             },
             
             toggleQuizOption: (qIdx, optIdx, isMultiple) => {
@@ -1410,12 +1479,16 @@
                 } else {
                     state.quiz.userAnswers[qIdx] = [optIdx];
                 }
+                
+                // Save Progress
+                localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz));
                 render();
             },
             
             submitAllAnswers: () => {
                 if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
                 state.quiz.endTime = Date.now();
+                // Calculate time taken based on start time, not expiration
                 const timeTakenSeconds = Math.floor((state.quiz.endTime - state.quiz.startTime) / 1000);
 
                 let score = 0;
@@ -1434,6 +1507,9 @@
                 state.quiz.score = score;
                 state.quiz.isFinished = true;
                 state.quiz.isReviewing = false; 
+                
+                // Clear saved state
+                localStorage.removeItem('seerat_quiz_state');
                 
                 if (currentUser) {
                     try {

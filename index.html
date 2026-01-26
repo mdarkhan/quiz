@@ -587,33 +587,40 @@
 
             const bnString = `${toBanglaDigit(bnDate)} ${bnMonths[bnMonthIndex]} ${toBanglaDigit(bnYear)}`;
 
-            // --- HIJRI & ENGLISH USING INTL ---
-            // Format to parts to manually control the output (No 'Era' or 'Jug')
-            const hijriParts = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(date);
-            const hDay = hijriParts.find(p => p.type === 'day')?.value;
-            const hMonth = hijriParts.find(p => p.type === 'month')?.value;
-            const hYear = hijriParts.find(p => p.type === 'year')?.value;
+            // --- HIJRI DATE CALCULATION (Manual Map for Mobile Compatibility) ---
+            // Mobile browsers often fail 'bn-BD-u-ca-islamic' and fallback to Gregorian (August).
+            // We use 'en-US' numeric to get the correct Hijri numbers, then map to Bangla manually.
+            const hijriMonths = ["মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জুমাদাল উলা", "জুমাদাস সানি", "রজব", "শা‘বান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
             
+            const hParts = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(date);
+            const hDayEn = hParts.find(p => p.type === 'day')?.value;
+            const hMonthIndex = parseInt(hParts.find(p => p.type === 'month')?.value) - 1; 
+            const hYearEn = hParts.find(p => p.type === 'year')?.value.replace(/[^0-9]/g, ''); // Remove 'AH'
+
+            const hDay = toBanglaDigit(hDayEn);
+            const hMonth = hijriMonths[hMonthIndex] || "হিজরি মাস"; // Fallback
+            const hYear = toBanglaDigit(hYearEn);
+            
+            // --- ENGLISH DATE ---
             const enFormatter = new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
             const enString = enFormatter.format(date);
 
             return `
             <div class="w-full md:w-auto text-center md:text-left flex flex-col items-center md:items-start relative z-10 pl-2">
                 
-                <!-- Hijri (Primary) - Horizontal Layout -->
-                <div class="mb-4 flex flex-col items-center md:items-start">
-                    <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mb-1 opacity-100 tracking-normal">আজকের তারিখ</div>
-                    <div class="flex items-center justify-center md:justify-start gap-3 leading-none">
-                        <span class="text-6xl font-black text-slate-800 dark:text-white tracking-tighter">${hDay}</span>
-                        <div class="flex flex-col items-start text-left justify-center">
-                            <span class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">${hMonth}</span>
-                            <span class="text-base font-semibold text-slate-500 dark:text-slate-400">${hYear} হিজরি</span>
-                        </div>
+                <!-- Hijri (Primary) -->
+                <div class="flex items-center justify-center md:justify-start gap-5 mb-6">
+                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">${hDay}</span>
+                    
+                    <!-- Vertical Divider matching bottom one -->
+                    <div class="w-px h-16 bg-emerald-200 dark:bg-emerald-800 hidden md:block"></div>
+                    
+                    <div class="flex flex-col items-start text-left justify-center">
+                        <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">আজকের তারিখ</span>
+                        <span class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 leading-none mb-1">${hMonth}</span>
+                        <span class="text-lg font-semibold text-slate-500 dark:text-slate-400 leading-none">${hYear} হিজরি</span>
                     </div>
                 </div>
-
-                <!-- Divider -->
-                <div class="h-1 w-12 bg-emerald-200 dark:bg-emerald-800 rounded-full mb-4"></div>
 
                 <!-- Secondary Dates (Side by Side) -->
                 <div class="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4 w-full">

@@ -742,7 +742,22 @@
                 if (unsubscribeLeaderboard) unsubscribeLeaderboard();
                 unsubscribeLeaderboard = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), (snapshot) => {
                     let data = []; snapshot.forEach(d => data.push(d.data()));
-                    state.leaderboardData = data.sort((a, b) => (b.score - a.score) || (a.timestamp - b.timestamp)).map((item, i) => ({ ...item, submissionSerial: i + 1 }));
+                    
+                    // Fix: Sort by time to assign serial, then by score for rank
+                    data.sort((a, b) => a.timestamp - b.timestamp);
+                    data = data.map((item, index) => ({
+                        ...item,
+                        submissionSerial: index + 1
+                    }));
+
+                    data.sort((a, b) => {
+                        if (b.score !== a.score) {
+                            return b.score - a.score;
+                        }
+                        return a.timestamp - b.timestamp;
+                    });
+
+                    state.leaderboardData = data;
                     if (state.view === 'leaderboard') render();
                 });
             }

@@ -47,6 +47,14 @@
         let GLOBAL_START_TIME = null;
         let quizCountdownInterval = null; 
 
+        // --- INLINE SVGs FOR PERFORMANCE (Fixes Click Issue) ---
+        const SVGS = {
+            checkSquare: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-emerald-500"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+            square: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 opacity-30"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`,
+            check: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="20 6 9 17 4 12"/></svg>`,
+            x: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>`
+        };
+
         const TEXTS = {
             siteTitle: "মাসউদ আলিমী", subtitle: "কুরআন তাফসির ও সীরাত কোর্স", home: "হোম", searchPlaceholder: "ক্লাস খুঁজুন...", listen: "শুনুন", download: "ডাউনলোড", summary: "সারসংক্ষেপ", resources: "রিসোর্স ও নোট", syllabus: "পরবর্তী ক্লাসের প্রস্তুতি ও সিলেবাস", back: "ফিরে যান", playOnDrive: "ড্রাইভে প্লে করুন", footerText: "সর্বস্বত্ব সংরক্ষিত © ২০২৬ | মাসউদ আলিমী", tafsir: "তাফসির", seerat: "সীরাত", halakah: "মহিলাদের হালাকাহ", all: "সব", noResults: "কোনো ক্লাস খুঁজে পাওয়া যায়নি।", takeQuiz: "কুইজ টেস্ট দিন", quizTitle: "আপনার জ্ঞান যাচাই করুন", quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।", startQuiz: "কুইজ শুরু করুন", resumeQuiz: "কুইজ চালিয়ে যান", question: "প্রশ্ন", next: "পরবর্তী", finish: "ফলাফল দেখুন", yourScore: "আপনার স্কোর", totalQuestions: "মোট প্রশ্ন", retry: "আবার চেষ্টা করুন", backToLecture: "ক্লাসে ফিরে যান", correct: "সঠিক উত্তর!", wrong: "ভুল উত্তর!", correctAnswerIs: "সঠিক উত্তরটি হলো:", globalQuizTitle: "সীরাত কুইজ পরীক্ষা", globalQuizDesc: "আপনার সীরাত জ্ঞান যাচাই করুন এবং নিজেকে প্রস্তুত করুন।", startGlobalQuiz: "কুইজ শুরু করুন", start: "শুরু করুন", enterDetails: "আপনার পরিচয় দিন", nameLabel: "আপনার নাম", guardianLabel: "পিতা/স্বামীর নাম", namePlaceholder: "আপনার পূর্ণ নাম লিখুন...", guardianPlaceholder: "নাম লিখুন...", leaderboardTitle: "মেধাতালিকা", rank: "অবস্থান", name: "নাম", score: "প্রাপ্ত নম্বর", time: "জমার সময়", submissionSerial: "জমার ক্রম", timeTaken: "গৃহীত সময়", viewLeaderboard: "মেধাতালিকা দেখুন", goHome: "হোমপেজে ফিরে যান",
             quizNotStarted: "শুরু হতে বাকি:", quizEnded: "কুইজ সমাপ্ত হয়েছে", enterQuiz: "কুইজ শুরু করুন"
@@ -169,6 +177,7 @@
                     const cells = row.c;
                     const options = [];
                     for (let i = 1; i <= 12; i++) if (cells[i]?.v) options.push(String(cells[i].v).trim());
+                    // NOTE TO USER: Ensure Column 14 (Correct Answer) in Google Sheet is set to "Format > Number > Plain Text" to avoid date conversion issues for inputs like "1, 2".
                     let correctVal = cells[13] ? String(cells[13].v) : "1";
                     let correctIndices = correctVal.includes(",") ? correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n)) : (!isNaN(parseInt(correctVal)) ? [parseInt(correctVal) - 1] : []);
                     return { question: cells[0]?.v || "প্রশ্ন লোড হয়নি", options, correctIndices, correctIndex: correctIndices[0], note: "", type: correctIndices.length > 1 ? "multiple" : "single" };
@@ -539,7 +548,7 @@
                             return `
                             <div class="rounded-2xl border-l-4 shadow-sm overflow-hidden bg-white dark:bg-slate-800 ${isCorrect ? 'border-emerald-500' : 'border-rose-500'}">
                                 <div class="p-5 flex gap-4">
-                                    <div class="shrink-0 mt-0.5"><div class="w-6 h-6 rounded-full text-white flex items-center justify-center ${isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}"><i data-lucide="${isCorrect ? 'check' : 'x'}" class="w-4 h-4"></i></div></div>
+                                    <div class="shrink-0 mt-0.5"><div class="w-6 h-6 rounded-full text-white flex items-center justify-center ${isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}">${isCorrect ? SVGS.check : SVGS.x}</div></div>
                                     <div class="space-y-4 w-full">
                                         <h4 class="font-bold text-lg leading-relaxed"><span class="opacity-40 mr-2">${toBanglaDigit(idx + 1)}.</span>${q.question}</h4>
                                         <div class="space-y-2">
@@ -610,9 +619,9 @@
                                 ${q.options.map((option, optIdx) => {
                                     const isSelected = uAns.includes(optIdx);
                                     let badgeClass = isSelected ? 'bg-emerald-600 text-white dark:bg-emerald-500' : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-slate-600 dark:group-hover:text-white';
-                                    let marker = isSelected ? '<i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i>' : '<i data-lucide="square" class="w-5 h-5 opacity-30"></i>';
+                                    let marker = isSelected ? SVGS.checkSquare : SVGS.square;
                                     
-                                    return `<button onclick="actions.toggleQuizOption(${qIdx}, ${optIdx})" class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${getOptionClass(isSelected, false, false)}"><div class="flex items-center gap-3"><div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">${banglaIndices[optIdx] || (optIdx + 1)}</div><span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span></div><div class="shrink-0 pl-2">${marker}</div></button>`;
+                                    return `<button type="button" onclick="actions.toggleQuizOption(${qIdx}, ${optIdx})" class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${getOptionClass(isSelected, false, false)}"><div class="flex items-center gap-3"><div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">${banglaIndices[optIdx] || (optIdx + 1)}</div><span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span></div><div class="shrink-0 pl-2">${marker}</div></button>`;
                                 }).join('')}
                             </div>
                         </div>`;
@@ -668,7 +677,7 @@
             startQuiz: async () => {
                 if (ALL_QUIZZES.length === 0) { await fetchQuizData(); if (ALL_QUIZZES.length === 0) { alert("কুইজ লোড করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।"); return; } }
                 const saved = getSavedQuizState(); if (saved) { actions.resumeQuiz(); return; }
-                state.quiz = { active: true, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timeLeft: QUIZ_TIME_LIMIT };
+                state.quiz = { active: true, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timerInterval: null, timeLeft: QUIZ_TIME_LIMIT };
                 state.view = (QUIZ_PASSWORD && QUIZ_PASSWORD !== "") ? 'quiz_password' : 'quiz_registration'; render(); window.scrollTo(0, 0);
             },
             verifyPassword: () => {

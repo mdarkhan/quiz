@@ -128,61 +128,113 @@
             onAuthStateChanged(auth, (user) => { currentUser = user; if (user && state.view === 'leaderboard') actions.fetchLeaderboardData(); });
         } catch (e) { console.warn("Firebase Offline Mode", e); }
 
+        // --- NEW: UNIVERSAL DATE PARSING LOGIC ---
+        const parseSheetDate = (cell) => {
+            if (!cell || !cell.v) return null;
+            const v = cell.v;
+            
+            // 1. Google JSON Date Object: "Date(2026,0,25...)"
+            if (typeof v === 'string' && v.startsWith('Date(')) {
+                const parts = v.match(/Date\((\d+),(\d+),(\d+)/);
+                if (parts) return { y: parseInt(parts[1]), m: parseInt(parts[2]), d: parseInt(parts[3]) }; // Month is 0-indexed in Date()
+            }
+            
+            // 2. String Formats
+            const str = (cell.f || v).toString().trim();
+            
+            // ISO: YYYY-MM-DD
+            let match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+            if (match) return { y: parseInt(match[1]), m: parseInt(match[2]) - 1, d: parseInt(match[3]) };
+            
+            // UK/Bangla: DD-MM-YYYY or DD/MM/YYYY
+            match = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+            if (match) return { y: parseInt(match[3]), m: parseInt(match[2]) - 1, d: parseInt(match[1]) };
+            
+            return null;
+        };
+
+        const parseSheetTime = (cell) => {
+            if (!cell || !cell.v) return { h: 0, m: 0 };
+            const v = cell.v;
+            
+            // 1. Google JSON Date Object with Time
+            if (typeof v === 'string' && v.startsWith('Date(')) {
+                const parts = v.match(/Date\(\d+,\d+,\d+,(\d+),(\d+)/);
+                if (parts) return { h: parseInt(parts[1]), m: parseInt(parts[2]) };
+            }
+            
+            // 2. String Time: "14:30", "2:30 PM", "2.30 pm"
+            const str = (cell.f || v).toString().toLowerCase().trim().replace('.', ':');
+            const timeMatch = str.match(/(\d{1,2}):(\d{1,2})/);
+            
+            if (timeMatch) {
+                let h = parseInt(timeMatch[1]);
+                let m = parseInt(timeMatch[2]);
+                
+                if (str.includes('pm') && h < 12) h += 12;
+                if (str.includes('am') && h === 12) h = 0;
+                
+                return { h, m };
+            }
+            return { h: 0, m: 0 };
+        };
+
         async function fetchQuizData() {
             try {
-                const response = await fetch(SHEET_JSON_URL);
+                const response = await fetch(SHEET_JSON_URL + "&t=" + Date.now());
                 const text = await response.text();
                 const json = JSON.parse(text.substring(text.indexOf("({") + 1, text.lastIndexOf("})") + 1));
                 const rows = json.table.rows;
+                
                 if (rows.length > 0) {
-                    if (rows[0].c[14]?.v && !isNaN(rows[0].c[14].v)) QUIZ_TIME_LIMIT = Number(rows[0].c[14].v); // Column O
-                    if (rows[0].c[15]?.v) QUIZ_PASSWORD = String(rows[0].c[15].v).trim(); // Column P
+                    // 1. Identify Config Row (Always prioritize Row 2 [Index 1])
+                    let configRow = null;
+                    let questionsStartRow = 0;
+
+                    if (rows.length > 1) {
+                        const r1 = rows[1];
+                        // Heuristic: Check if row 2 has ANY config data
+                        if (r1.c[14]?.v || r1.c[15]?.v || r1.c[16]?.v || r1.c[17]?.v) {
+                            configRow = r1;
+                            questionsStartRow = 1;
+                        }
+                    }
+                    if (!configRow) { configRow = rows[0]; questionsStartRow = 0; }
+
+                    // 2. Parse Config
+                    if (configRow.c[14]?.v && !isNaN(configRow.c[14].v)) QUIZ_TIME_LIMIT = Number(configRow.c[14].v);
+                    if (configRow.c[15]?.v) QUIZ_PASSWORD = String(configRow.c[15].v).trim();
                     
-                    // --- Global Start Date (Q=16) & Time (R=17) ---
-                    const cellQ = rows[0].c[16];
-                    const cellR = rows[0].c[17];
+                    const cellQ = configRow.c[16];
+                    const cellR = configRow.c[17];
                     
                     if (cellQ && cellR) {
                         try {
-                            let dateStr = cellQ.f || cellQ.v; 
-                            let timeStr = cellR.f || cellR.v;
-
-                            const dateObjMatch = String(cellQ.v).match(/Date\((\d+),(\d+),(\d+)\)/);
-                            if (dateObjMatch) {
-                                const [_, y, m, d] = dateObjMatch;
-                                dateStr = `${y}-${Number(m) + 1}-${d}`; 
+                            const dateParts = parseSheetDate(cellQ);
+                            const timeParts = parseSheetTime(cellR);
+                            
+                            if (dateParts) {
+                                const d = new Date(dateParts.y, dateParts.m, dateParts.d, timeParts.h, timeParts.m, 0);
+                                if (!isNaN(d.getTime())) {
+                                    GLOBAL_START_TIME = d.getTime();
+                                    console.log("Global Schedule Set:", d);
+                                }
                             }
-
-                            dateStr = String(dateStr).trim();
-                            timeStr = String(timeStr).trim();
-
-                            if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dateStr)) {
-                                const [d, m, y] = dateStr.split('-');
-                                dateStr = `${y}-${m}-${d}`;
-                            } else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
-                                const [d, m, y] = dateStr.split('/');
-                                dateStr = `${y}-${m}-${d}`;
-                            }
-
-                            let finalStr = timeStr.toLowerCase().includes('m') ? `${dateStr} ${timeStr}` : `${dateStr}T${timeStr}`;
-                            if (finalStr.includes('T') && finalStr.split(':').length === 2) finalStr += ":00";
-
-                            const d = new Date(finalStr);
-                            if (!isNaN(d.getTime())) GLOBAL_START_TIME = d.getTime();
-                            console.log("Global Schedule:", d);
                         } catch (e) { console.error("Date parse error", e); }
                     }
+
+                    // 3. Map Questions
+                    ALL_QUIZZES = rows.slice(questionsStartRow).filter(r => r.c[0]?.v && r.c[0].v !== 'Question' && r.c[0].v !== 'প্রশ্ন').map(row => {
+                        const cells = row.c;
+                        const options = [];
+                        for (let i = 1; i <= 12; i++) if (cells[i]?.v) options.push(String(cells[i].v).trim());
+                        let correctVal = cells[13] ? String(cells[13].v) : "1";
+                        let correctIndices = correctVal.includes(",") ? correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n)) : (!isNaN(parseInt(correctVal)) ? [parseInt(correctVal) - 1] : []);
+                        return { question: cells[0]?.v || "প্রশ্ন লোড হয়নি", options, correctIndices, correctIndex: correctIndices[0], note: "", type: correctIndices.length > 1 ? "multiple" : "single" };
+                    });
                 }
-                ALL_QUIZZES = rows.map(row => {
-                    const cells = row.c;
-                    const options = [];
-                    for (let i = 1; i <= 12; i++) if (cells[i]?.v) options.push(String(cells[i].v).trim());
-                    // NOTE TO USER: Ensure Column 14 (Correct Answer) in Google Sheet is set to "Format > Number > Plain Text" to avoid date conversion issues for inputs like "1, 2".
-                    let correctVal = cells[13] ? String(cells[13].v) : "1";
-                    let correctIndices = correctVal.includes(",") ? correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n)) : (!isNaN(parseInt(correctVal)) ? [parseInt(correctVal) - 1] : []);
-                    return { question: cells[0]?.v || "প্রশ্ন লোড হয়নি", options, correctIndices, correctIndex: correctIndices[0], note: "", type: correctIndices.length > 1 ? "multiple" : "single" };
-                });
                 render(); 
+                handleQuizCountdown();
             } catch (error) { console.error("Error fetching Sheet:", error); }
         }
         fetchQuizData();

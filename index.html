@@ -245,7 +245,7 @@
             app.innerHTML = html;
             lucide.createIcons();
             if (state.view === 'home') {
-                document.getElementById('searchInput')?.focus();
+                // REMOVED AUTO-FOCUS ON SEARCH INPUT HERE
                 // START LIVE COUNTDOWN HANDLER
                 handleQuizCountdown();
             } else {

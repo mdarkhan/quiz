@@ -64,6 +64,7 @@
         let ALL_QUIZZES = [], QUIZ_TIME_LIMIT = 0, QUIZ_PASSWORD = "";
         let GLOBAL_START_TIME = null;
         let GLOBAL_END_TIME = null;
+        let QUIZ_NAME_FROM_SHEET = "সীরাত"; // Default
         let quizCountdownInterval = null; 
 
         // --- INLINE SVGs FOR PERFORMANCE (Fixes Click Issue) ---
@@ -237,6 +238,14 @@
                     const cellS = configRow.c[18]; // End Date
                     const cellT = configRow.c[19]; // End Time
                     
+                    // --- NEW: Parse Quiz Name from Sheet P5 (Row 5, Col 15 [Index 15]) ---
+                    // Row 5 is index 4. Ensure we check rows[4] safely
+                    if (rows.length > 4 && rows[4].c[15]?.v) {
+                        QUIZ_NAME_FROM_SHEET = String(rows[4].c[15].v).trim();
+                    } else {
+                        QUIZ_NAME_FROM_SHEET = "সীরাত"; // Default
+                    }
+
                     if (cellQ && cellR) {
                         try {
                             const dateParts = parseSheetDate(cellQ);
@@ -403,6 +412,7 @@
             if (quizCountdownInterval) clearInterval(quizCountdownInterval);
             
             const btn = document.getElementById('quiz-start-btn');
+            const noteEl = document.getElementById('quiz-schedule-text');
             if (!btn) return;
             
             // Logic 1: If NO global schedule (no start time), it's always open (unless no questions)
@@ -416,7 +426,7 @@
                      const diff = saved.expiryTime - Date.now();
                      btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz} (${formatCountdown(diff)})`;
                      btn.onclick = () => window.actions.resumeQuiz();
-                     btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105 animate-pulse";
+                     btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 hover:scale-105 animate-pulse border-2 border-emerald-500 shadow-emerald-500/20";
                  } else {
                      btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
                      btn.onclick = () => window.actions.startQuiz();
@@ -456,7 +466,8 @@
                     btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz} (${formatCountdown(diff)})`;
                     btn.disabled = false;
                     btn.onclick = () => window.actions.resumeQuiz();
-                    btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105 animate-pulse border border-emerald-500";
+                    // Resume Button Style: White BG, Green Text, distinct border
+                    btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 hover:scale-105 animate-pulse border-2 border-emerald-500 shadow-emerald-500/20";
                     lucide.createIcons();
                     return;
                 }
@@ -467,6 +478,10 @@
                     ? GLOBAL_END_TIME 
                     : GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
                 
+                // Determine Scenarios for Text Update
+                const isScenario2 = (QUIZ_TIME_LIMIT > 0 && GLOBAL_END_TIME);
+                const isScenario3 = (!QUIZ_TIME_LIMIT && GLOBAL_END_TIME);
+
                 // Before Start
                 if (now < GLOBAL_START_TIME) {
                     const timeToStart = GLOBAL_START_TIME - now;
@@ -481,20 +496,38 @@
                         btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> ${TEXTS.quizEnded}`;
                         btn.disabled = true;
                         btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed grayscale border border-gray-300";
+                        
+                        // Update Schedule Note Text to "Ended" if possible
+                        if (noteEl) noteEl.innerText = "কুইজ সমাপ্ত হয়েছে";
+                        
                         clearInterval(quizCountdownInterval); // Stop loop
                     } else {
                         // Running Phase
                         // If End Time exists, show countdown to end on button
-                        let label = TEXTS.enterQuiz; // Default
+                        let label = "শুরু করুন"; // Shortened Default
                         if (GLOBAL_END_TIME) {
                             const timeToEnd = GLOBAL_END_TIME - now;
-                            label += ` (সময় বাকি: ${formatCountdown(timeToEnd)})`;
+                            label += ` (সময় বাকিঃ ${formatCountdown(timeToEnd)})`;
                         }
                         
                         btn.innerHTML = `<i data-lucide="log-in" class="w-5 h-5"></i> ${label}`;
                         btn.disabled = false;
                         btn.onclick = () => window.actions.startQuiz();
                         btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 hover:scale-105 animate-pulse border border-emerald-100";
+                        
+                        // --- LIVE NOTE UPDATE FOR SCENARIO 2 ---
+                        if (noteEl) {
+                            if (isScenario2) {
+                                // "কুইজ চলছে! শেষ সময়: [Date String]"
+                                const e = new Date(GLOBAL_END_TIME);
+                                const eDate = e.toLocaleString('bn-BD', { day: 'numeric', month: 'long', timeZone: 'Asia/Dhaka' });
+                                const eTime = e.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
+                                const newText = `কুইজ চলছে! শেষ সময়: ${eDate} ${eTime}`; // Matches user request exactly
+                                if (noteEl.innerText !== newText) noteEl.innerText = newText;
+                            } else if (isScenario3 || (!isScenario2 && !isScenario3)) {
+                                if (noteEl.innerText !== TEXTS.quizRunning) noteEl.innerText = TEXTS.quizRunning;
+                            }
+                        }
                     }
                 }
                 lucide.createIcons();
@@ -562,11 +595,11 @@
                     if (GLOBAL_END_TIME && now < GLOBAL_END_TIME) {
                         // Running Phase
                         if (isScenario2) {
-                            // Scenario 2: Show End Time in note
+                            // Scenario 2: Show End Time in note (Shortened for Mobile)
                             const e = new Date(GLOBAL_END_TIME);
                             const eTime = e.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
                             const eDate = e.toLocaleString('bn-BD', { day: 'numeric', month: 'long', timeZone: 'Asia/Dhaka' });
-                            scheduleNote = `কুইজ চলছে! শেষ হবে: ${eDate} ${eTime}`;
+                            scheduleNote = `কুইজ চলছে! শেষ সময়: ${eDate} ${eTime}`; // Using 'সময়' per request
                         } else if (isScenario3) {
                             // Scenario 3: Just "Quiz Running"
                             scheduleNote = TEXTS.quizRunning; // "কুইজ চলছে"
@@ -602,9 +635,11 @@
                 <div class="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 bg-[length:200%_auto] animate-gradient-xy rounded-xl p-6 text-white mb-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
                     <div class="absolute inset-0 bg-white/5 skew-x-[-15deg] w-1/4 animate-shine blur-lg opacity-30"></div>
                     <div class="space-y-2 relative z-10">
-                        <div class="flex items-center gap-2 text-emerald-100 text-sm font-bold uppercase tracking-wider"><i data-lucide="trophy" class="w-4 h-4"></i> কুইজ প্রতিযোগিতা</div>
-                        <h3 class="text-2xl font-bold">${TEXTS.globalQuizTitle}</h3>
-                        <p class="opacity-90 max-w-lg">${scheduleNote ? `<span class="inline-block bg-white/20 px-2 py-0.5 rounded text-sm font-bold mt-1">${scheduleNote}</span>` : TEXTS.globalQuizDesc}</p>
+                        <h3 class="text-2xl font-bold flex items-center gap-2">
+                             <i data-lucide="trophy" class="w-6 h-6 text-yellow-300 fill-yellow-400"></i>
+                             ${QUIZ_NAME_FROM_SHEET} কুইজ পরীক্ষা
+                        </h3>
+                        <p class="opacity-90 max-w-lg">${scheduleNote ? `<span id="quiz-schedule-text" class="inline-block bg-white/20 px-2 py-0.5 rounded text-sm font-bold mt-1">${scheduleNote}</span>` : TEXTS.globalQuizDesc}</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 relative z-10">
                         <button onclick="actions.viewLeaderboard()" class="bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
@@ -782,14 +817,15 @@
                                                 const isRight = isMultiple ? q.correctIndices.includes(optIdx) : optIdx === q.correctIndex;
                                                 const isSel = uAns.includes(optIdx);
                                                 
-                                                let circleClass = "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300";
-                                                if (isRight) circleClass = "bg-emerald-600 text-white";
-                                                else if (isSel && !isRight) circleClass = "bg-rose-500 text-white";
+                                                // Darker background circle for better visibility in review
+                                                let circleClass = "bg-slate-800 text-white border border-slate-600"; 
+                                                if (isRight) circleClass = "bg-emerald-600 text-white border-emerald-600";
+                                                else if (isSel && !isRight) circleClass = "bg-rose-600 text-white border-rose-600";
 
                                                 return `
                                                 <div class="p-3 rounded-lg border flex justify-between items-center text-sm gap-3 ${getOptionClass(isSel, isRight, true)}">
                                                     <div class="flex items-center gap-3 flex-1">
-                                                        <div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${circleClass}">
+                                                        <div class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shadow-sm ${circleClass}">
                                                             ${banglaIndices[optIdx] || (optIdx + 1)}
                                                         </div>
                                                         <span class="text-base font-medium leading-tight">${opt}</span>

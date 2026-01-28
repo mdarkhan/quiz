@@ -61,8 +61,9 @@
 
         // --- CONSTANTS & DATA ---
         const SHEET_JSON_URL = "https://docs.google.com/spreadsheets/d/15xgI5Q8rWWrjJEen7fQtGaULAFDPIpx5eL4I-74GnWY/gviz/tq?tqx=out:json&gid=0";
-        let ALL_QUIZZES = [], QUIZ_TIME_LIMIT = 3600, QUIZ_PASSWORD = "";
+        let ALL_QUIZZES = [], QUIZ_TIME_LIMIT = 0, QUIZ_PASSWORD = "";
         let GLOBAL_START_TIME = null;
+        let GLOBAL_END_TIME = null;
         let quizCountdownInterval = null; 
 
         // --- INLINE SVGs FOR PERFORMANCE (Fixes Click Issue) ---
@@ -77,7 +78,7 @@
 
         const TEXTS = {
             siteTitle: "মাসউদ আলিমী", subtitle: "কুরআন তাফসির ও সীরাত কোর্স", home: "হোম", searchPlaceholder: "ক্লাস খুঁজুন...", listen: "শুনুন", download: "ডাউনলোড", summary: "সারসংক্ষেপ", resources: "রিসোর্স ও নোট", syllabus: "পরবর্তী ক্লাসের প্রস্তুতি ও সিলেবাস", back: "ফিরে যান", playOnDrive: "ড্রাইভে প্লে করুন", footerText: "সর্বস্বত্ব সংরক্ষিত © ২০২৬ | মাসউদ আলিমী", tafsir: "তাফসির", seerat: "সীরাত", jummah: "জুমার বয়ান", halakah: "মহিলাদের হালাকাহ", all: "সব", noResults: "কোনো ক্লাস খুঁজে পাওয়া যায়নি।", takeQuiz: "কুইজ টেস্ট দিন", quizTitle: "আপনার জ্ঞান যাচাই করুন", quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।", startQuiz: "কুইজ শুরু করুন", resumeQuiz: "কুইজ চালিয়ে যান", question: "প্রশ্ন", next: "পরবর্তী", finish: "ফলাফল দেখুন", yourScore: "আপনার স্কোর", totalQuestions: "মোট প্রশ্ন", retry: "আবার চেষ্টা করুন", backToLecture: "ক্লাসে ফিরে যান", correct: "সঠিক উত্তর!", wrong: "ভুল উত্তর!", correctAnswerIs: "সঠিক উত্তরটি হলো:", globalQuizTitle: "সীরাত কুইজ পরীক্ষা", globalQuizDesc: "আপনার সীরাত জ্ঞান যাচাই করুন এবং নিজেকে প্রস্তুত করুন।", startGlobalQuiz: "কুইজ শুরু করুন", start: "শুরু করুন", enterDetails: "আপনার পরিচয় দিন", nameLabel: "আপনার নাম", guardianLabel: "পিতা/স্বামীর নাম", namePlaceholder: "আপনার পূর্ণ নাম লিখুন...", guardianPlaceholder: "নাম লিখুন...", leaderboardTitle: "মেধাতালিকা", rank: "অবস্থান", name: "নাম", score: "প্রাপ্ত নম্বর", time: "জমার সময়", submissionSerial: "জমার ক্রম", timeTaken: "গৃহীত সময়", viewLeaderboard: "মেধাতালিকা দেখুন", goHome: "হোমপেজে ফিরে যান",
-            quizNotStarted: "শুরু হতে বাকি:", quizEnded: "কুইজ সমাপ্ত হয়েছে", enterQuiz: "কুইজ শুরু করুন"
+            quizNotStarted: "শুরু হতে বাকি:", quizEnded: "কুইজ সমাপ্ত হয়েছে", enterQuiz: "কুইজ শুরু করুন", quizRunning: "কুইজ চলছে"
         };
 
         const COURSE_DATA = [
@@ -222,25 +223,44 @@
                     if (!configRow) { configRow = rows[0]; questionsStartRow = 0; }
 
                     // 2. Parse Config
-                    if (configRow.c[14]?.v && !isNaN(configRow.c[14].v)) QUIZ_TIME_LIMIT = Number(configRow.c[14].v);
+                    // O2 (Index 14): Duration in Seconds. If empty, 0.
+                    if (configRow.c[14]?.v && !isNaN(configRow.c[14].v)) {
+                         QUIZ_TIME_LIMIT = Number(configRow.c[14].v);
+                    } else {
+                         QUIZ_TIME_LIMIT = 0;
+                    }
+                    
                     if (configRow.c[15]?.v) QUIZ_PASSWORD = String(configRow.c[15].v).trim();
                     
-                    const cellQ = configRow.c[16];
-                    const cellR = configRow.c[17];
+                    const cellQ = configRow.c[16]; // Start Date
+                    const cellR = configRow.c[17]; // Start Time
+                    const cellS = configRow.c[18]; // End Date
+                    const cellT = configRow.c[19]; // End Time
                     
                     if (cellQ && cellR) {
                         try {
                             const dateParts = parseSheetDate(cellQ);
                             const timeParts = parseSheetTime(cellR);
-                            
                             if (dateParts) {
                                 const d = new Date(dateParts.y, dateParts.m, dateParts.d, timeParts.h, timeParts.m, 0);
                                 if (!isNaN(d.getTime())) {
                                     GLOBAL_START_TIME = d.getTime();
-                                    console.log("Global Schedule Set:", d);
                                 }
                             }
-                        } catch (e) { console.error("Date parse error", e); }
+                        } catch (e) { console.error("Start Date parse error", e); }
+                    }
+
+                    if (cellS && cellT) {
+                        try {
+                            const dateParts = parseSheetDate(cellS);
+                            const timeParts = parseSheetTime(cellT);
+                            if (dateParts) {
+                                const d = new Date(dateParts.y, dateParts.m, dateParts.d, timeParts.h, timeParts.m, 0);
+                                if (!isNaN(d.getTime())) {
+                                    GLOBAL_END_TIME = d.getTime();
+                                }
+                            }
+                        } catch (e) { console.error("End Date parse error", e); }
                     }
 
                     // 3. Map Questions
@@ -382,45 +402,102 @@
         const handleQuizCountdown = () => {
             if (quizCountdownInterval) clearInterval(quizCountdownInterval);
             
-            // Only proceed if Global Schedule exists
-            if (!GLOBAL_START_TIME) return;
-
             const btn = document.getElementById('quiz-start-btn');
             if (!btn) return;
-
-            const endTime = GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
+            
+            // Logic 1: If NO global schedule (no start time), it's always open (unless no questions)
+            // But if we have Start Time, we enforce rules.
+            
+            if (!GLOBAL_START_TIME) {
+                 // No schedule defined, button is just "Enter Quiz"
+                 // Check saved state first even if no schedule
+                 const saved = getSavedQuizState();
+                 if (saved && saved.expiryTime > Date.now()) {
+                     const diff = saved.expiryTime - Date.now();
+                     btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz} (${formatCountdown(diff)})`;
+                     btn.onclick = () => window.actions.resumeQuiz();
+                     btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105 animate-pulse";
+                 } else {
+                     btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
+                     btn.onclick = () => window.actions.startQuiz();
+                     btn.disabled = false;
+                     btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white hover:scale-105";
+                 }
+                 lucide.createIcons();
+                 
+                 // If saved state exists, we need interval to update countdown
+                 if (saved && saved.expiryTime > Date.now()) {
+                     quizCountdownInterval = setInterval(() => {
+                         const now = Date.now();
+                         const diff = saved.expiryTime - now;
+                         if (diff <= 0) {
+                             // Expired
+                             btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
+                             btn.onclick = () => window.actions.startQuiz();
+                             btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white hover:scale-105";
+                             clearInterval(quizCountdownInterval);
+                         } else {
+                             btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz} (${formatCountdown(diff)})`;
+                         }
+                         lucide.createIcons();
+                     }, 1000);
+                 }
+                 
+                 return;
+            }
 
             const update = () => {
                 const now = Date.now();
-                const timeToStart = GLOBAL_START_TIME - now;
-                const timeToEnd = endTime - now;
+                const saved = getSavedQuizState();
 
-                if (timeToStart > 0) {
-                    // Phase 1: WAITING (Countdown)
-                    // Update text only, keep existing disabled state from renderHome
-                    btn.innerHTML = `<i data-lucide="clock" class="w-5 h-5"></i> ${TEXTS.quizNotStarted} ${formatCountdown(timeToStart)}`;
+                // 1. Resume Logic (Top Priority)
+                if (saved && saved.expiryTime > now) {
+                    const diff = saved.expiryTime - now;
+                    btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz} (${formatCountdown(diff)})`;
+                    btn.disabled = false;
+                    btn.onclick = () => window.actions.resumeQuiz();
+                    btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105 animate-pulse border border-emerald-500";
                     lucide.createIcons();
-                } else if (timeToEnd > 0) {
-                    // Phase 2: RUNNING (Active)
-                    // If button is currently disabled (meaning it was in Waiting state), re-render to enable it
-                    if (btn.disabled) {
-                        render(); // Switch to Active state (Enter Quiz)
-                        // render() restarts this handler, so we return to avoid overlap
-                        return;
-                    }
-                    // If already active, we assume text "Enter Quiz" is correct. 
-                    // Optional: You could show "Time Remaining" here if desired, but "Enter Quiz" is standard.
-                } else {
-                    // Phase 3: ENDED
-                    // If button text is NOT "Quiz Ended", switch state
-                    if (!btn.innerText.includes(TEXTS.quizEnded)) {
-                        render(); // Switch to Ended state
-                        clearInterval(quizCountdownInterval); // Stop monitoring
-                        return;
-                    }
-                    // If already ended, ensure interval stops
-                    clearInterval(quizCountdownInterval);
+                    return;
                 }
+
+                // 2. Schedule Logic (No Active Session)
+                // Determine effective end time for countdown display
+                const endTime = GLOBAL_END_TIME 
+                    ? GLOBAL_END_TIME 
+                    : GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
+                
+                // Before Start
+                if (now < GLOBAL_START_TIME) {
+                    const timeToStart = GLOBAL_START_TIME - now;
+                    btn.innerHTML = `<i data-lucide="clock" class="w-5 h-5"></i> ${TEXTS.quizNotStarted} ${formatCountdown(timeToStart)}`;
+                    btn.disabled = true;
+                    btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-800 text-emerald-200 cursor-not-allowed border border-emerald-700 w-full md:w-64";
+                } 
+                // After Start
+                else {
+                    // Check End Time if exists (Hard Stop or Entry Stop)
+                    if (GLOBAL_END_TIME && now >= GLOBAL_END_TIME) {
+                        btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> ${TEXTS.quizEnded}`;
+                        btn.disabled = true;
+                        btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed grayscale border border-gray-300";
+                        clearInterval(quizCountdownInterval); // Stop loop
+                    } else {
+                        // Running Phase
+                        // If End Time exists, show countdown to end on button
+                        let label = TEXTS.enterQuiz; // Default
+                        if (GLOBAL_END_TIME) {
+                            const timeToEnd = GLOBAL_END_TIME - now;
+                            label += ` (সময় বাকি: ${formatCountdown(timeToEnd)})`;
+                        }
+                        
+                        btn.innerHTML = `<i data-lucide="log-in" class="w-5 h-5"></i> ${label}`;
+                        btn.disabled = false;
+                        btn.onclick = () => window.actions.startQuiz();
+                        btn.className = "px-8 py-3 rounded-full font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 hover:scale-105 animate-pulse border border-emerald-100";
+                    }
+                }
+                lucide.createIcons();
             };
 
             // Run once immediately, then interval
@@ -454,48 +531,58 @@
             const filtered = COURSE_DATA.filter(l => (state.filter === 'all' || l.category === state.filter) && (l.content.title.toLowerCase().includes(state.search.toLowerCase()) || l.content.description.toLowerCase().includes(state.search.toLowerCase())));
             const savedState = getSavedQuizState();
             
-            // --- DYNAMIC BUTTON LOGIC ---
+            // --- DYNAMIC BUTTON LOGIC (Initial State) ---
+            // NOTE: The actual button text/state is updated live by handleQuizCountdown()
+            // We just need to set the scheduleNote correctly here.
+            
             let btnAction = "actions.startQuiz()";
             let btnText = TEXTS.startGlobalQuiz;
             let btnIcon = "play-circle";
             let btnDisabled = false;
             let btnClass = "bg-white text-emerald-700 hover:bg-white hover:scale-105";
-            let scheduleNote = ""; // Info text for the card
+            let scheduleNote = ""; 
+
+            const now = Date.now();
 
             if (savedState) {
-                btnAction = "actions.resumeQuiz()";
-                btnText = TEXTS.resumeQuiz;
-                btnIcon = "play";
+                // Resume logic handled by handleQuizCountdown
+                btnText = TEXTS.resumeQuiz; // Placeholder
             } else if (GLOBAL_START_TIME) {
-                const now = Date.now();
-                const endTime = GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
+                // Determine Scenario
+                const isScenario2 = (QUIZ_TIME_LIMIT > 0 && GLOBAL_END_TIME);
+                const isScenario3 = (!QUIZ_TIME_LIMIT && GLOBAL_END_TIME);
                 
-                // Formatted Schedule String for Notice
+                // Base Schedule Note (Future)
                 const d = new Date(GLOBAL_START_TIME);
-                const datePart = d.toLocaleString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
-                const timePart = d.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true });
+                const datePart = d.toLocaleString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' });
+                const timePart = d.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
                 scheduleNote = `আগামী কুইজ: ${datePart} ${timePart}`;
 
-                if (now < GLOBAL_START_TIME) {
-                    // Not Started - Button shows Countdown via handleQuizCountdown()
-                    btnText = "লোড হচ্ছে..."; // Initial text, replaced instantly by JS
-                    btnDisabled = true;
-                    btnClass = "bg-emerald-800 text-emerald-200 cursor-not-allowed border border-emerald-700 w-full md:w-64"; // distinct style for countdown
-                    btnIcon = "clock";
-                } else if (now >= endTime) {
-                    // Ended
-                    btnText = TEXTS.quizEnded;
-                    btnDisabled = true;
-                    btnClass = "bg-gray-200 text-gray-500 cursor-not-allowed grayscale border border-gray-300";
-                    btnIcon = "x-circle";
-                    scheduleNote = "কুইজটি সমাপ্ত হয়েছে";
-                } else {
-                    // Running
-                    btnText = TEXTS.enterQuiz;
-                    btnIcon = "log-in";
-                    btnClass = "bg-white text-emerald-700 hover:bg-emerald-50 hover:scale-105 animate-pulse border border-emerald-100";
-                    scheduleNote = "কুইজ চলছে!";
+                if (now >= GLOBAL_START_TIME) {
+                    if (GLOBAL_END_TIME && now < GLOBAL_END_TIME) {
+                        // Running Phase
+                        if (isScenario2) {
+                            // Scenario 2: Show End Time in note
+                            const e = new Date(GLOBAL_END_TIME);
+                            const eTime = e.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
+                            const eDate = e.toLocaleString('bn-BD', { day: 'numeric', month: 'long', timeZone: 'Asia/Dhaka' });
+                            scheduleNote = `কুইজ চলছে! শেষ হবে: ${eDate} ${eTime}`;
+                        } else if (isScenario3) {
+                            // Scenario 3: Just "Quiz Running"
+                            scheduleNote = TEXTS.quizRunning; // "কুইজ চলছে"
+                        } else {
+                             // Default running (Scenario 1 active)
+                             scheduleNote = TEXTS.quizRunning;
+                        }
+                    } else if (GLOBAL_END_TIME && now >= GLOBAL_END_TIME) {
+                        scheduleNote = "কুইজ সমাপ্ত হয়েছে";
+                    } else {
+                        // Started, no end time
+                        scheduleNote = TEXTS.quizRunning;
+                    }
                 }
+                
+                btnText = "লোড হচ্ছে..."; // Initial text
             }
 
             return `
@@ -855,10 +942,13 @@
                 state.quiz.userName = name; state.quiz.userGuardian = guardian; state.quiz.questions = [...ALL_QUIZZES]; state.quiz.startTime = Date.now(); 
                 
                 // --- NEW: Expiry Time Logic (Global vs Normal) ---
-                if (GLOBAL_START_TIME) {
-                    state.quiz.expiryTime = GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
+                if (QUIZ_TIME_LIMIT > 0) {
+                     state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
+                } else if (GLOBAL_END_TIME) {
+                     state.quiz.expiryTime = GLOBAL_END_TIME;
                 } else {
-                    state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
+                     // Fallback if neither exists (should not happen if setup correctly)
+                     state.quiz.expiryTime = Date.now() + (3600 * 1000); // Default 1 hour
                 }
 
                 localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz)); actions.startTimerLoop(); state.view = 'quiz'; render(); window.scrollTo(0, 0);

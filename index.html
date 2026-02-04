@@ -79,6 +79,7 @@
         let GLOBAL_START_TIME = null;
         let GLOBAL_END_TIME = null;
         let QUIZ_NAME_FROM_SHEET = "সীরাত"; // This acts as the Quiz ID
+        let LIVE_QUIZ_ID = "সীরাত"; // NEW: Specific ID for the Live quiz to update homepage leaderboard
         let CURRENT_LOADED_SHEET = "Live"; // Track context
         let LIVE_DATA_SIGNATURE = ""; // To detect fallbacks
         let quizCountdownInterval = null; 
@@ -388,6 +389,7 @@
                     // Update Global for Homepage ONLY if it's Live
                     if (sheetName === "Live") {
                         ALL_QUIZZES = parsedQuestions;
+                        LIVE_QUIZ_ID = QUIZ_NAME_FROM_SHEET; // Update the Live ID for leaderboard filtering
                         // FORCE UPDATE UI HERE
                         render(); 
                         handleQuizCountdown();
@@ -561,13 +563,13 @@
                      btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz}`;
                      if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(diff)}`;
                      btn.onclick = () => window.actions.resumeQuiz();
-                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 btn-3d";
+                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 btn-3d w-full";
                  } else {
                      btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
                      if (countdownDisplay) countdownDisplay.innerText = "";
                      btn.onclick = () => window.actions.startQuiz();
                      btn.disabled = false;
-                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100";
+                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100 w-full";
                  }
                  lucide.createIcons();
                  
@@ -581,7 +583,7 @@
                              btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
                              if (countdownDisplay) countdownDisplay.innerText = "";
                              btn.onclick = () => window.actions.startQuiz();
-                             btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100";
+                             btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100 w-full";
                              clearInterval(quizCountdownInterval);
                          } else {
                              if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(diff)}`;
@@ -604,7 +606,7 @@
                     btn.disabled = false;
                     btn.onclick = () => window.actions.resumeQuiz();
                     // Resume Button Style: White BG, Green Text, distinct border
-                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border-2 border-emerald-500 shadow-emerald-500/20";
+                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border-2 border-emerald-500 shadow-emerald-500/20 w-full";
                     lucide.createIcons();
                     return;
                 }
@@ -626,7 +628,7 @@
                     if (countdownDisplay) countdownDisplay.innerText = `শুরু হতে বাকি: ${formatCountdown(timeToStart)}`;
                     btn.disabled = true;
                     // Yellow button with black text as requested
-                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-yellow-400 text-stone-900 border-yellow-500 btn-3d w-full md:w-64 cursor-not-allowed opacity-90";
+                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-yellow-400 text-stone-900 border-yellow-500 btn-3d w-full cursor-not-allowed opacity-90";
                 } 
                 // After Start
                 else {
@@ -636,7 +638,7 @@
                         if (countdownDisplay) countdownDisplay.innerText = "";
                         btn.disabled = true;
                         // Red background, white text for ended state
-                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-red-600 text-white cursor-not-allowed border border-red-700 opacity-90";
+                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-red-600 text-white cursor-not-allowed border border-red-700 opacity-90 w-full";
                         
                         // Update Schedule Note Text to Telegram Link
                         if (noteEl) {
@@ -657,7 +659,7 @@
                         btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> পরীক্ষা শুরু করুন`;
                         btn.disabled = false;
                         btn.onclick = () => window.actions.startQuiz();
-                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border border-emerald-100";
+                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border border-emerald-100 w-full";
                         
                         // --- LIVE NOTE UPDATE FOR SCENARIO 2 ---
                         if (noteEl) {
@@ -740,12 +742,16 @@
                         </h3>
                         <p class="opacity-90 max-w-lg">${scheduleNote ? `<span id="quiz-schedule-text" class="inline-block bg-white/20 px-2 py-0.5 rounded text-sm font-bold mt-1">${scheduleNote}</span>` : TEXTS.globalQuizDesc}</p>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3 relative z-10 items-center">
-                        <button onclick="actions.viewLeaderboard()" class="bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
-                        <button onclick="actions.viewAnswerKey()" class="bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="book-open-check" class="w-5 h-5"></i> উত্তর দেখুন</button>
-                        <button id="quiz-start-btn" class="px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100">
-                            <i data-lucide="loader" class="w-5 h-5 animate-spin"></i> লোড হচ্ছে...
-                        </button>
+                    <div class="flex flex-col sm:flex-row gap-3 relative z-10 items-end">
+                        <button onclick="actions.viewLeaderboard()" class="flex-1 w-full bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
+                        <button onclick="actions.viewAnswerKey()" class="flex-1 w-full bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="book-open-check" class="w-5 h-5"></i> উত্তর দেখুন</button>
+                        
+                        <div class="flex flex-col items-center gap-1 flex-1 w-full">
+                            <div id="quiz-countdown-display" class="text-xs font-bold text-yellow-200 animate-pulse tracking-wide min-h-[16px]"></div>
+                            <button id="quiz-start-btn" class="w-full px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100">
+                                <i data-lucide="loader" class="w-5 h-5 animate-spin"></i> লোড হচ্ছে...
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="flex flex-col md:flex-row gap-4 justify-between items-center sticky top-20 z-30 py-2 mb-8">
@@ -1020,12 +1026,8 @@
                         <div class="flex items-baseline justify-center gap-1 mb-6"><span class="text-7xl font-black ${color}">${score}</span><span class="text-3xl font-bold opacity-30">/ ${questions.length}</span></div>
                         <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-8 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ease-out ${pct >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-rose-400 to-rose-600'}" style="width: ${pct}%"></div></div>
                         <div class="p-4 rounded-xl mb-8 bg-slate-100 dark:bg-slate-700/50"><p class="text-lg font-medium leading-relaxed">"${msg}"</p></div>
-                        <div class="flex flex-col gap-3 w-full">
-                             ${!state.quiz.isPractice ? `<button onclick="actions.viewLeaderboard()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>` : ''}
-                            <div class="flex flex-col gap-3 mt-2">
-                                <button onclick="actions.reviewQuizAnswers()" class="py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="book-open-check" class="w-5 h-5"></i> উত্তর দেখুন</button>
-                                <button onclick="actions.goHome()" class="py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 font-bold transition flex items-center justify-center gap-2"><i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}</button>
-                            </div>
+                        <div class="flex flex-col gap-3 w-full mt-6">
+                            <button onclick="actions.goHome()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}</button>
                         </div>
                     </div>
                 </div>`;
@@ -1377,15 +1379,21 @@
                 unsubscribeLeaderboard = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), (snapshot) => {
                     let data = []; snapshot.forEach(d => data.push(d.data()));
                     
-                    // Sorting logic:
-                    // 1. Sort by timestamp to get chronological order (for serial number)
+                    // 1. Sort by timestamp first to determine the submission serial (Chronological Order)
                     data.sort((a, b) => a.timestamp - b.timestamp);
                     
-                    // 2. Assign serials based on submission order within their specific quiz ID groups ideally, 
-                    // but practically global serial is fine or we recalc serial after filter.
-                    // Let's recalc serial after filter in renderLeaderboard for accuracy per quiz.
+                    // 2. Assign serials based on submission order within their specific quiz ID groups
+                    const serialCounters = {};
+                    data = data.map(item => {
+                        // Normalize quizId if missing to group correctly
+                        const qId = item.quizId || "সীরাত"; 
+                        if (!serialCounters[qId]) serialCounters[qId] = 0;
+                        serialCounters[qId]++;
+                        // Return new object with calculated serial
+                        return { ...item, submissionSerial: serialCounters[qId] };
+                    });
                     
-                    // 3. For global ranking data:
+                    // 3. Sort by Score (Desc) then Time Taken (Asc) for the actual Leaderboard Ranking
                     data.sort((a, b) => {
                         if (b.score !== a.score) {
                             return b.score - a.score;

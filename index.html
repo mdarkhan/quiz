@@ -452,6 +452,24 @@
             </div>
         </div>
 
+        <label class="section-label">ব্যাখ্যা (প্র্যাকটিস)</label>
+        <div class="grid-options">
+            <div class="select-card">
+                <input type="radio" name="exp" id="e-off" value="off" checked>
+                <label for="e-off">
+                    <i data-lucide="eye-off" style="margin-bottom:5px;"></i>
+                    <span>দেখাব না</span>
+                </label>
+            </div>
+            <div class="select-card">
+                <input type="radio" name="exp" id="e-on" value="on">
+                <label for="e-on">
+                    <i data-lucide="eye" style="margin-bottom:5px;"></i>
+                    <span>দেখাব</span>
+                </label>
+            </div>
+        </div>
+
         <label class="section-label">সময় (অপশনাল)</label>
         <div class="grid-options">
             <div class="select-card">
@@ -558,6 +576,7 @@
         let userAns = []; 
         let currentSelection = []; 
         let mode = 'single';
+        let showExp = false;
         let userName = "আল্লাহর বান্দা";
         let timerInterval;
         
@@ -668,6 +687,9 @@
             
             questions.sort(() => Math.random() - 0.5);
             mode = document.querySelector('input[name="mode"]:checked').value;
+            // Get Explanation setting
+            showExp = document.querySelector('input[name="exp"]:checked').value === 'on';
+
             curIdx = 0;
             userAns = new Array(questions.length).fill(null);
             
@@ -740,13 +762,6 @@
                 container.appendChild(div);
             });
             lucide.createIcons();
-            
-            // In Practice Mode, if answered, show feedback
-            if(mode === 'single' && userAns[curIdx]) {
-                 // Restore feedback state if revisiting? 
-                 // (Simple version: reset unless we want complex history. For now reset.)
-                 // If we want to prevent re-answering in practice mode, we check userAns[curIdx].
-            }
         }
 
         function toggleSelection(idx) {
@@ -800,7 +815,9 @@
                 if(q.correct.includes(idx)) card.classList.add('correct-answer');
                 else if(currentSelection.includes(idx)) card.classList.add('wrong-answer');
             });
-            if(q.exp) {
+            
+            // Only show explanation if setting is ON
+            if(q.exp && showExp) {
                 document.getElementById('exp-text').innerText = q.exp;
                 document.getElementById('explanation-area').style.display = 'block';
             }

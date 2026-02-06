@@ -411,7 +411,7 @@
                 <div class="mode-select">
                     <input type="radio" name="mode" id="m-single" value="single" checked>
                     <label for="m-single">
-                        <div class="mode-icon">📖</div>
+                        <div class="mode-icon">📚</div>
                         <strong>প্র্যাকটিস</strong>
                     </label>
                 </div>
@@ -526,7 +526,8 @@
 
         // --- FETCH & PARSE ---
         async function fetchQuestionsFromSheet(sheetName) {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+            // Updated URL to ensure all data is returned and headers are handled
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&headers=0`;
             
             try {
                 const response = await fetch(url);
@@ -578,24 +579,29 @@
             return arr;
         }
 
+        // Normalize Bangla Numerals to English
+        function banglaToEnglish(str) {
+            return str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+        }
+
         function processRawData(rows, sheetName) {
             if(!rows || rows.length === 0) return [];
             
             return rows.map((row, i) => {
-                // Remove quotes surrounding the string if present from Gviz CSV export
-                // Usually parseCSV handles quotes, but sometimes Gviz adds extra wrapping quotes
-                // The parseCSV above strips the structural quotes.
-                
                 const q = row[0];
                 let opts = [];
                 let correctStr = "";
                 let exp = "";
 
-                // Logic: Scan from end to find Answer Column (Numeric)
+                // Logic: Scan from end to find Answer Column
+                // Regex matches: Digits (0-9), Bangla Digits (০-৯), Space, Comma
+                // This allows detecting the answer column even if it uses Bangla numbers
+                const ansRegex = /^[\d\s,\u09E6-\u09EF]+$/;
+
                 let correctIdx = -1;
                 for (let j = row.length - 1; j > 0; j--) {
                     const val = row[j] ? row[j].toString().trim() : "";
-                    if (/^[\d,\s]+$/.test(val)) {
+                    if (val && ansRegex.test(val)) {
                         correctIdx = j;
                         break;
                     }
@@ -610,7 +616,8 @@
                     if(o && o !== "" && o !== sheetName) opts.push(o);
                 }
 
-                correctStr = row[correctIdx];
+                // Normalize answer keys to English digits for parsing
+                correctStr = banglaToEnglish(row[correctIdx].toString());
                 exp = row[correctIdx + 1] || "";
 
                 const corr = [];

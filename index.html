@@ -1,1432 +1,893 @@
 <!DOCTYPE html>
-<html lang="bn" class="scroll-smooth">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>মাসউদ আলিমী - সীরাত কোর্স</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                container: { center: true, padding: { DEFAULT: '1rem', sm: '1.5rem', lg: '2rem' } },
-                extend: {
-                    fontFamily: { sans: ['"Noto Sans Bengali"', '"Hind Siliguri"', 'sans-serif'] },
-                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' } },
-                    boxShadow: { 'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)', 'glow': '0 0 15px rgba(16, 185, 129, 0.3)' }
-                }
-            }
-        }
-    </script>
+    <title>ইসলামিক কুইজ</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-33.3333%); } }
-        .animate-marquee { display: flex; width: max-content; animation: marquee 12s linear infinite; }
-        .animate-marquee:hover { animation-play-state: paused; }
+        :root {
+            /* Authentic Islamic Green Palette */
+            --primary-dark: #145A32;    /* Deep Forest Green */
+            --primary-light: #27AE60;   /* Fresh Green */
+            --accent-gold: #F1C40F;     /* Bright Gold */
+            --text-white: #FFFFFF;
+            --text-dark: #0B5345;
+            
+            --correct-color: #2E7D32;
+            --wrong-color: #C0392B;
+
+            --glass-bg: #FFFFFF;
+            --shadow-soft: 0 10px 30px rgba(20, 90, 50, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans Bengali', sans-serif;
+            background-color: #F4F8F5; 
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- STICKY TIMER --- */
+        #sticky-timer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--primary-dark);
+            color: var(--accent-gold);
+            text-align: center;
+            padding: 12px;
+            font-weight: 700;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+        #sticky-timer.active { transform: translateY(0); }
+
+        /* --- HEADER --- */
+        header {
+            width: 100%;
+            background: linear-gradient(180deg, var(--primary-dark) 0%, #1E8449 100%);
+            color: white;
+            text-align: center;
+            padding: 2.5rem 1rem 4rem 1rem;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: 0 4px 20px rgba(20, 90, 50, 0.2);
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: var(--accent-gold);
+            opacity: 0.7;
+        }
+
+        .bismillah {
+            font-family: 'Amiri', serif;
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            display: block;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 2px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.95;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* --- MAIN CONTAINER --- */
+        main {
+            width: 95%;
+            max-width: 600px;
+            margin-top: -3rem; /* Overlap header */
+            z-index: 10;
+            padding-bottom: 3rem;
+            transition: margin-top 0.5s ease;
+        }
         
-        /* New Animation for Quiz Card */
-        @keyframes gradient-xy {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        main.no-header {
+            margin-top: 2rem;
         }
-        .animate-gradient-xy {
-            background-size: 200% 200%;
-            animation: gradient-xy 6s ease infinite;
+
+        .card {
+            background: var(--glass-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+            border-top: 4px solid var(--primary-light);
         }
-        @keyframes shine {
-            from { transform: translateX(-100%) skewX(-15deg); }
-            to { transform: translateX(200%) skewX(-15deg); }
+        .card.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .animate-shine {
-            animation: shine 3s infinite linear;
+
+        /* --- FORM ELEMENTS --- */
+        .section-title {
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #E9F7EF;
+            padding-bottom: 5px;
+            margin-top: 1.5rem;
         }
-        /* 3D Button Utility */
-        .btn-3d {
-            transition: all 0.1s;
-            transform: translateY(0);
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        .section-title:first-child { margin-top: 0; }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
         }
-        .btn-3d:active {
-            transform: translateY(4px);
-            box-shadow: none !important;
+        
+        /* Three column grid for sheets if needed, or flex wrap */
+        .sheet-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
         }
-        .btn-3d:disabled {
-            transform: none;
-            box-shadow: none;
+
+        .mode-select input { display: none; }
+        .mode-select label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 2px solid #E9F7EF;
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            height: 100%;
+            color: #555;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .mode-select input:checked + label {
+            border-color: var(--primary-light);
+            background: #E9F7EF;
+            color: var(--primary-dark);
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.15);
+        }
+
+        .mode-icon {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            color: var(--primary-light);
+        }
+
+        /* --- TIMER INPUT --- */
+        .timer-config {
+            background: #F4F8F5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            border: 1px dashed var(--primary-light);
+        }
+        .timer-config.show { display: block; }
+        
+        .timer-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #D5D8DC;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+        .timer-input:focus { outline: none; border-color: var(--primary-light); }
+
+        /* --- BUTTONS --- */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            background: var(--primary-dark);
+            color: white;
+            margin-top: 20px;
+        }
+        .btn:hover { background: #0E4526; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #95A5A6; cursor: not-allowed; }
+
+        .btn-outline {
+            background: white;
+            border: 2px solid var(--primary-dark);
+            color: var(--primary-dark);
+        }
+        .btn-outline:hover { background: #E9F7EF; }
+
+        /* --- QUIZ UI --- */
+        .q-number {
+            font-size: 0.9rem;
+            color: #7DCEA0;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .q-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1B2631;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .option-group { display: flex; flex-direction: column; gap: 10px; }
+        
+        .option-btn {
+            position: relative;
+            background: white;
+            border: 1px solid #D5D8DC;
+            border-radius: 8px;
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            color: #34495E;
+        }
+        
+        .option-btn:hover { background: #FDFEFE; border-color: var(--primary-light); }
+        
+        .option-btn.selected {
+            background: #E9F7EF;
+            border-color: var(--primary-dark);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .option-circle {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #BDC3C7;
+            border-radius: 50%;
+            margin-right: 15px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .option-btn.selected .option-circle {
+            border-color: var(--primary-dark);
+            background: var(--primary-dark);
+        }
+
+        /* Multiple Choice Square */
+        .option-btn.multi .option-circle { border-radius: 4px; }
+
+        /* Feedback Colors */
+        .option-btn.correct { background: #D4EFDF; border-color: var(--correct-color); color: var(--correct-color); }
+        .option-btn.correct .option-circle { background: var(--correct-color); border-color: var(--correct-color); content: '✓'; }
+        
+        .option-btn.wrong { background: #FADBD8; border-color: var(--wrong-color); color: var(--wrong-color); }
+        .option-btn.wrong .option-circle { background: var(--wrong-color); border-color: var(--wrong-color); }
+
+        .explanation {
+            background: #FEF9E7;
+            border-left: 4px solid var(--accent-gold);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+            color: #7F6000;
+        }
+
+        /* --- RESULTS --- */
+        .result-score {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: white;
+            border: 6px solid var(--primary-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px auto;
+        }
+        .score-val { font-size: 2.8rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
+        .score-max { font-size: 1.1rem; color: #7F8C8D; }
+        
+        .review-card {
+            background: white;
+            border-bottom: 1px solid #ECF0F1;
+            padding: 15px 0;
+        }
+        
+        footer { margin-top: auto; padding: 20px; color: #95A5A6; font-size: 0.8rem; }
+        
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        @media(max-width:600px) {
+            h1 { font-size: 2rem; }
+            .grid-options { grid-template-columns: 1fr; }
         }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col antialiased">
-    <div id="app" class="contents"></div>
+<body>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Sticky Timer -->
+    <div id="sticky-timer">
+        <span>সময় বাকি:</span>
+        <span id="timer-val">00:00</span>
+    </div>
 
-        // --- CONSTANTS & DATA ---
-        const SHEET_BASE_URL = "https://docs.google.com/spreadsheets/d/15xgI5Q8rWWrjJEen7fQtGaULAFDPIpx5eL4I-74GnWY/gviz/tq?tqx=out:json";
-        let ALL_QUIZZES = [], QUIZ_TIME_LIMIT = 0, QUIZ_PASSWORD = "";
-        let GLOBAL_START_TIME = null;
-        let GLOBAL_END_TIME = null;
-        let QUIZ_NAME_FROM_SHEET = "সীরাত"; // This acts as the Quiz ID
-        let LIVE_QUIZ_ID = "সীরাত"; // NEW: Specific ID for the Live quiz to update homepage leaderboard
-        let CURRENT_LOADED_SHEET = "Live"; // Track context
-        let LIVE_DATA_SIGNATURE = ""; // To detect fallbacks
-        let quizCountdownInterval = null; 
+    <!-- Loading -->
+    <div id="loading-overlay">
+        <div style="font-size:2rem; margin-bottom:10px;">⌛</div>
+        <span>প্রশ্ন লোড হচ্ছে...</span>
+    </div>
 
-        // --- INLINE SVGs FOR PERFORMANCE (Fixes Click Issue) ---
-        const SVGS = {
-            checkSquare: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-emerald-500"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
-            square: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 opacity-30"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`,
-            check: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="20 6 9 17 4 12"/></svg>`,
-            x: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>`,
-            eye: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
-            eyeOff: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7c.68 0 1.35-.06 2-.19"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
-            telegram: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.39 4.025-1.629 4.476-1.635z"/></svg>`
-        };
+    <!-- Header -->
+    <header id="main-header">
+        <span class="bismillah">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</span>
+        <h1>ইসলামিক কুইজ</h1>
+        <span class="subtitle">জ্ঞানই আলো, অজ্ঞতা অন্ধকার</span>
+    </header>
 
-        const TEXTS = {
-            siteTitle: "মাসউদ আলিমী", subtitle: "কুরআন তাফসির ও সীরাত কোর্স", home: "হোম", searchPlaceholder: "ক্লাস খুঁজুন...", listen: "শুনুন", download: "ডাউনলোড", summary: "সারসংক্ষেপ", resources: "রিসোর্স ও নোট", syllabus: "পরবর্তী ক্লাসের প্রস্তুতি ও সিলেবাস", back: "ফিরে যান", playOnDrive: "ড্রাইভে প্লে করুন", footerText: "সর্বস্বত্ব সংরক্ষিত © ২০২৬ | মাসউদ আলিমী", tafsir: "তাফসির", seerat: "সীরাত", jummah: "জুমার বয়ান", halakah: "মহিলাদের হালাকাহ", all: "সব", noResults: "কোনো ক্লাস খুঁজে পাওয়া যায়নি।", takeQuiz: "কুইজ টেস্ট দিন", quizTitle: "আপনার জ্ঞান যাচাই করুন", quizDesc: "এই ক্লাসের উপর ভিত্তি করে কুইজ টেস্ট দিন এবং নিজেকে যাচাই করুন।", startQuiz: "কুইজ শুরু করুন", resumeQuiz: "কুইজ চালিয়ে যান", question: "প্রশ্ন", next: "পরবর্তী", finish: "ফলাফল দেখুন", yourScore: "আপনার স্কোর", totalQuestions: "মোট প্রশ্ন", retry: "আবার চেষ্টা করুন", backToLecture: "ক্লাসে ফিরে যান", correct: "সঠিক উত্তর!", wrong: "ভুল উত্তর!", correctAnswerIs: "সঠিক উত্তরটি হলো:", globalQuizTitle: "সীরাত কুইজ পরীক্ষা", globalQuizDesc: "আপনার সীরাত জ্ঞান যাচাই করুন এবং নিজেকে প্রস্তুত করুন।", startGlobalQuiz: "কুইজ শুরু করুন", start: "শুরু করুন", enterDetails: "আপনার পরিচয় দিন", nameLabel: "আপনার নাম", guardianLabel: "পিতা/স্বামীর নাম", namePlaceholder: "আপনার পূর্ণ নাম লিখুন...", guardianPlaceholder: "নাম লিখুন...", leaderboardTitle: "মেধাতালিকা", rank: "অবস্থান", name: "নাম", score: "প্রাপ্ত নম্বর", time: "জমার সময়", submissionSerial: "জমার ক্রম", timeTaken: "গৃহীত সময়", viewLeaderboard: "মেধাতালিকা দেখুন", goHome: "হোমপেজ", 
-            quizNotStarted: "শুরু হতে বাকি:", quizEnded: "কুইজ সমাপ্ত হয়েছে", enterQuiz: "কুইজ শুরু করুন", quizRunning: "কুইজ চলছে"
-        };
-
-        const COURSE_DATA = [
-            { id: 2, date: "2026-01-02", duration: "2 hr 15 min", category: "seerat", driveLink: "https://drive.google.com/file/d/10ec8WS0aDemwlLFaavuA1_fTyV1m6x3j/view?usp=sharing", content: { title: "সীরাত-০১ঃ সীরাত পাঠের গুরুত্ব", description: "আমাদের দৈনন্দিন জীবন ও আখিরাতে সীরাত পাঠের গুরুত্ব ও পদ্ধতি সম্পর্কে আলোচনা করা হয়েছে।", syllabus: `দারসের আলোচনা আর "সীরাত পাঠ" বইয়ের ১৫ থেকে ৪৫ পৃষ্ঠার মধ্যে পরবর্তী পরীক্ষা হবে ইনশা আল্লাহু তা'আলা।`, resources: [{ label: "বইঃ সীরাত পাঠ - গুরুত্ব, পদ্ধতি ও প্রায়োগিক রুপ<br />(লেখকঃ মাওলানা খালিদ সাইফুল্লাহ রহমানী)", url: "#" }] }, quiz: [] },
-            { id: 4, date: "2026-01-09", duration: "1 hr 55 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1ZDWo-M7Ai0EFPyO2sF19OV7X38yDWDOk/view?usp=sharing", content: { title: "সীরাত-০২ঃ সীরাত সংরক্ষণ ও আরব জাতির ইতিহাস", description: "সীরাত সংরক্ষণের বৈজ্ঞানিক পদ্ধতি, আরবের ভৌগোলিক গুরুত্ব এবং ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর ইতিহাস।", summary: [ "সীরাত সংরক্ষণের ইতিহাস ও নির্ভরযোগ্যতা", "আরব উপদ্বীপের ভৌগোলিক ও কৌশলগত গুরুত্ব", "আরব জাতির শ্রেণিবিভাগ", "ইব্রাহিম (আ.) ও ইসমাইল (আ.)-এর মক্কায় আগমন", "আরবে মূর্তিপূজার সূচনা" ], syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২১ থেকে ২৬ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }], hasFamilyTree: true }, quiz: [] },
-            { id: 5, date: "2026-01-16", duration: "2 hr 12 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1kZ_1tZbT5hPbaCVFbEmeX2TbGRcE_zy-/view?usp=sharing", content: { title: "সীরাত-০৩", description: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।", summary: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।", syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ২৬ থেকে ৪২ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }] }, quiz: [] },
-            { id: 6, date: "2026-01-23", duration: "2 hr 31 min", category: "seerat", driveLink: "https://drive.google.com/file/d/1-f2y26WqHG81gh4vQANjlgQQ9saxJn1r/view?usp=sharing", content: { title: "সীরাত-০৪", description: "নবুওয়ত লাভ এবং মক্কী জীবনের প্রারম্ভিক দাওয়াত ও সংঘাত।", syllabus: `পরীক্ষা দারস ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ৪২ থেকে ৫০ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }] }, quiz: [] },
-            { id: 7, date: "2026-01-30", duration: "2 hr 25 min", category: "seerat", driveLink: "https://drive.google.com/file/d/13Csszc6M7y8gNIiAty4DuizylpNgV_cc/view?usp=sharing", content: { title: "সীরাত-০৫", description: "এই ক্লাসের বিস্তারিত তথ্য ও কুইজ শীঘ্রই আপডেট করা হবে।", syllabus: `পরীক্ষা দারস, একাধিক বিয়ের শীট ও "সীরাতে খাতামুল আম্বিয়া" বইয়ের ৫১ থেকে ৫৪ নম্বর পৃষ্ঠা পর্যন্ত এর উপর হবে।`, resources: [{ label: 'বইঃ "সীরাতে খাতামুল আম্বিয়া"<br />(লেখকঃ মুফতী মুহাম্মদ শফী)', url: "#" }] }, quiz: [] },
-            // Halakah Section
-            { id: 101, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1TsM9B0GElMMMo-8Qj_rO_Sv3QaNhv9Oe/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১ঃ নামাজ", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 102, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1KAfzoRaNAJrq0JioJuyN6-xZOGejBuEs/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-২ঃ ইলমের গুরুত্ব ও ফজিলত", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 103, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1ijQkY8gQz7Z3rMH-8hxDNoyaQcodoiRs/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৩ঃ মুখের হেফাজত", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 104, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1fR73OwMi86biSGcQigLAhwbi_Mi9KTo9/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৪ঃ আদর্শ পরিবার ০১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 105, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1fa_Izojw3E3t3UmSIba0H2LC8s5cfIr6/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৫ঃ আদর্শ পরিবার ২", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 106, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1UYihVWlwr_rVLRcdk9F6UvFD6pb6XgZ7/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৭ঃ আদর্শ পরিবার ৩", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 107, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1r8IUAgt1mG8fANf1e5GAQCG99wWnWmof/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৮ঃ পরকীয়া", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 108, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1cqm0Uaf2JkMz_qsVDLt-VTMz4jfwp7pI/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-৯ঃ নেক সন্তান ০১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 109, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1jb-Jf1lS8aOB3F4fbSDKXlC99GQ-1ekJ/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১০ঃ নেক সন্তান ০২", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 110, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1uOqu_iUwDnV0dHgBuut9YQyGZwb-BSID/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১১ঃ নেক সন্তান ৩", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 111, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1o3TeLFQU07c4rT4FB-QtlPh8CPwvJTee/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১২ঃ নেক সন্তান ৪", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 112, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1JUY0vC5cj8UEuHQ4UBTv5fJLk7s4d6gM/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৩ঃ নেক সন্তান ৫", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 113, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1lHEMz8rh4OFi51mE9jdk22PJ4VKAEy21/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৪ঃ নেক সন্তান ০৬", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] },
-            { id: 114, date: "সংগৃহীত", duration: "অনির্ধারিত", category: "halakah", driveLink: "https://drive.google.com/file/d/1RpGNTMKseJLBzSZnwLUkHop5hvSZPAwr/view?usp=sharing", content: { title: "মহিলাদের হালাকাহ-১৫ঃ ফরজে আইন-১", description: "মহিলাদের জন্য বিশেষ দ্বীনি আলোচনা।", resources: [] }, quiz: [] }
-        ];
-
-        // --- Helper to parse Bangla numerals ---
-        const parseBanglaNumber = (str) => {
-            const bnToEn = {'০':0, '১':1, '২':2, '৩':3, '৪':4, '৫':5, '৬':6, '৭':7, '৮':8, '৯':9};
-            return str.replace(/[০-৯]/g, (d) => bnToEn[d]);
-        };
-
-        // --- Automatically Inject Quiz Info ---
-        COURSE_DATA.forEach(l => {
-            // Regex to match "Title-Number" e.g., "সীরাত-০১", "মহিলাদের হালাকাহ-১"
-            // Note: Tafsir not explicitly in data but handling generically
-            const seeratMatch = l.content.title.match(/সীরাত-([০-৯]+)/);
-            const tafsirMatch = l.content.title.match(/তাফসির-([০-৯]+)/);
-            const halakahMatch = l.content.title.match(/মহিলাদের হালাকাহ-([০-৯]+)/);
-
-            let sheetName = null;
-            let quizId = null;
-
-            if (seeratMatch) {
-                const num = parseInt(parseBanglaNumber(seeratMatch[1]), 10);
-                sheetName = `seerat-${num}`;
-                quizId = `seerat-${num}`;
-            } else if (tafsirMatch) {
-                const num = parseInt(parseBanglaNumber(tafsirMatch[1]), 10);
-                sheetName = `tafseer-${num}`;
-                quizId = `tafseer-${num}`;
-            } else if (halakahMatch) {
-                const num = parseInt(parseBanglaNumber(halakahMatch[1]), 10);
-                sheetName = `halakah-${num}`;
-                quizId = `halakah-${num}`;
-            }
-
-            if (sheetName) {
-                l.quizInfo = {
-                    sheetName: sheetName,
-                    quizId: quizId,
-                    title: l.content.title + " কুইজ"
-                };
-            }
-        });
-
-        const latestLectureWithSyllabus = [...COURSE_DATA].reverse().find(l => l.content.syllabus);
-        const GLOBAL_NOTICE = latestLectureWithSyllabus ? latestLectureWithSyllabus.content.syllabus : "আসসালামু আলাইকুম।";
-
-        const state = {
-            darkMode: false, view: 'home', selectedLecture: null, filter: 'seerat', search: '', playerMode: 'embed', playbackRate: 1.0, leaderboardData: [], showWaitModal: false, leaderboardFilter: null,
-            quiz: { active: false, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timerInterval: null, timeLeft: 3600, isPractice: false },
-            alert: { show: false, message: '' }
-        };
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDwR1TblS5HPAzJEkT7TG2RGmjGRBIMj9E", authDomain: "quiz-d9e52.firebaseapp.com", projectId: "quiz-d9e52", storageBucket: "quiz-d9e52.firebasestorage.app", messagingSenderId: "978225433994", appId: "1:978225433994:web:59f6e2e097bb04571c4c73"
-        };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'seerat-course-v1';
-        let db, auth, currentUser, unsubscribeLeaderboard = null;
-
-        // --- HELPERS ---
-        const toBanglaDigit = (num) => num?.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]) || '';
-        const formatTime = (seconds) => {
-            if (seconds < 0) seconds = 0;
-            return `${toBanglaDigit(Math.floor(seconds / 60))}:${toBanglaDigit(seconds % 60 < 10 ? '0' : '')}${toBanglaDigit(seconds % 60)}`;
-        };
-        const formatCountdown = (ms) => {
-            if (ms <= 0) return "";
-            const d = Math.floor(ms / (1000 * 60 * 60 * 24));
-            const h = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((ms % (1000 * 60)) / 1000);
+    <main id="main-container">
+        <!-- Home -->
+        <div id="screen-home" class="card active">
             
-            let parts = [];
-            if (d > 0) parts.push(`${toBanglaDigit(d)} দিন`);
-            if (h > 0) parts.push(`${toBanglaDigit(h)} ঘ`);
-            parts.push(`${toBanglaDigit(m)} মি`);
-            parts.push(`${toBanglaDigit(s)} সে`);
-            return parts.join(' ');
-        };
-        const getDriveEmbedLink = (url) => typeof url === 'string' && url.includes("/d/") ? `https://drive.google.com/file/d/${url.split("/d/")[1].split('/')[0]}/preview` : url;
-        const MosqueIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M10 6h4"/><path d="M12 6c3.5 0 6 3 6 7h-12c0-4 2.5-7 6-7Z"/><path d="M18 13v8"/><path d="M6 13v8"/><path d="M6 21h12"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg>`;
+            <!-- Source Selection -->
+            <div class="section-title">বিষয়বস্তু নির্বাচন</div>
+            <div id="sheet-list" class="sheet-options">
+                <!-- Will be populated by JS -->
+                <div>লোডিং...</div>
+            </div>
 
-        // --- LOGIC ---
-        try {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app); db = getFirestore(app);
-            const initAuth = async () => { try { await (typeof __initial_auth_token !== 'undefined' && __initial_auth_token ? signInWithCustomToken(auth, __initial_auth_token) : signInAnonymously(auth)); } catch (e) { console.error("Auth Error:", e); } };
-            initAuth();
-            onAuthStateChanged(auth, (user) => { currentUser = user; if (user && state.view === 'leaderboard') actions.fetchLeaderboardData(); });
-        } catch (e) { console.warn("Firebase Offline Mode", e); }
+            <!-- Mode Selection -->
+            <div class="section-title">কুইজ মোড</div>
+            <div class="grid-options">
+                <div class="mode-select">
+                    <input type="radio" name="mode" id="m-single" value="single" checked>
+                    <label for="m-single">
+                        <div class="mode-icon">📖</div>
+                        <strong>প্র্যাকটিস</strong>
+                    </label>
+                </div>
+                <div class="mode-select">
+                    <input type="radio" name="mode" id="m-full" value="full">
+                    <label for="m-full">
+                        <div class="mode-icon">📝</div>
+                        <strong>এক্সাম</strong>
+                    </label>
+                </div>
+            </div>
 
-        // --- NEW: UNIVERSAL DATE PARSING LOGIC ---
-        const parseSheetDate = (cell) => {
-            if (!cell || !cell.v) return null;
-            const v = cell.v;
+            <!-- Timer Selection -->
+            <div class="section-title">সময় (অপশনাল)</div>
+            <div class="grid-options">
+                <div class="mode-select">
+                    <input type="radio" name="timer" id="t-off" value="off" checked onclick="toggleTimer(false)">
+                    <label for="t-off">সময় ছাড়া</label>
+                </div>
+                <div class="mode-select">
+                    <input type="radio" name="timer" id="t-on" value="on" onclick="toggleTimer(true)">
+                    <label for="t-on">সময় সেট</label>
+                </div>
+            </div>
             
-            // 1. Google JSON Date Object: "Date(2026,0,25...)"
-            if (typeof v === 'string' && v.startsWith('Date(')) {
-                const parts = v.match(/Date\((\d+),(\d+),(\d+)/);
-                if (parts) return { y: parseInt(parts[1]), m: parseInt(parts[2]), d: parseInt(parts[3]) }; // Month is 0-indexed in Date()
-            }
-            
-            // 2. String Formats
-            const str = (cell.f || v).toString().trim();
-            
-            // ISO: YYYY-MM-DD
-            let match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-            if (match) return { y: parseInt(match[1]), m: parseInt(match[2]) - 1, d: parseInt(match[3]) };
-            
-            // UK/Bangla: DD-MM-YYYY or DD/MM/YYYY
-            match = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
-            if (match) return { y: parseInt(match[3]), m: parseInt(match[2]) - 1, d: parseInt(match[1]) };
-            
-            return null;
-        };
+            <div id="timer-box" class="timer-config">
+                <label style="display:block; margin-bottom:8px; font-size:0.9rem;">কত মিনিট?</label>
+                <input type="number" id="custom-min" class="timer-input" placeholder="উদাহরণ: ১০" min="1">
+            </div>
 
-        const parseSheetTime = (cell) => {
-            if (!cell || !cell.v) return { h: 0, m: 0 };
-            const v = cell.v;
-            
-            // 1. Google JSON Date Object with Time
-            if (typeof v === 'string' && v.startsWith('Date(')) {
-                const parts = v.match(/Date\(\d+,\d+,\d+,(\d+),(\d+)/);
-                if (parts) return { h: parseInt(parts[1]), m: parseInt(parts[2]) };
-            }
-            
-            // 2. String Time: "14:30", "2:30 PM", "2.30 pm"
-            const str = (cell.f || v).toString().toLowerCase().trim().replace('.', ':');
-            const timeMatch = str.match(/(\d{1,2}):(\d{1,2})/);
-            
-            if (timeMatch) {
-                let h = parseInt(timeMatch[1]);
-                let m = parseInt(timeMatch[2]);
-                
-                if (str.includes('pm') && h < 12) h += 12;
-                if (str.includes('am') && h === 12) h = 0;
-                
-                return { h, m };
-            }
-            return { h: 0, m: 0 };
-        };
+            <button onclick="startQuiz()" class="btn" id="start-btn">কুইজ শুরু করুন</button>
+        </div>
 
-        // Modified to accept dynamic sheetName and detect fallbacks
-        async function fetchQuizData(sheetName = "Live") {
+        <!-- Quiz -->
+        <div id="screen-quiz" class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <span id="q-progress" class="q-number">প্রশ্ন ১/১০</span>
+                <span id="q-source-badge" style="font-size:0.8rem; background:#E9F7EF; padding:3px 8px; border-radius:4px; color:var(--primary-dark);"></span>
+            </div>
+            
+            <div id="q-container"></div>
+
+            <div class="explanation" id="explanation">
+                <strong style="color:var(--primary-dark)">ব্যাখ্যা:</strong>
+                <p id="exp-text" style="margin-top:5px; font-size:0.95rem;"></p>
+            </div>
+
+            <div style="margin-top:30px;">
+                <button id="btn-submit" class="btn" onclick="submitAnswer()">উত্তর নিশ্চিত করুন</button>
+                <button id="btn-next" class="btn btn-outline" style="display:none;" onclick="nextQuestion()">পরবর্তী প্রশ্ন</button>
+                <button id="btn-finish" class="btn" style="display:none;" onclick="finishQuiz()">ফলাফল দেখুন</button>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div id="screen-result" class="card">
+            <h2 style="text-align:center; color:var(--primary-dark); margin-bottom:20px;">কুইজ ফলাফল</h2>
+            <div class="result-score">
+                <span id="score-val" class="score-val">0</span>
+                <span id="score-max" class="score-max">/0</span>
+            </div>
+            <p id="feedback-msg" style="text-align:center; font-size:1.2rem; font-weight:600; margin-bottom:30px;"></p>
+            <div id="review-list"></div>
+            <button onclick="location.reload()" class="btn btn-outline" style="margin-top:20px;">হোম পেজে ফিরুন</button>
+        </div>
+    </main>
+
+    <footer>
+        &copy; ২০২৬ ইসলামিক কুইজ | প্র্যাকটিস এর জন্য তৈরি
+    </footer>
+
+    <script>
+        // --- CONFIG ---
+        const SHEET_ID = '1UQkKKJ6QLJRyJqVRNyAcyKqtN1cmnbuIsGf9UtVSJyI';
+        const KNOWN_SHEETS = ['বই', 'লেকচার', 'শীট']; 
+
+        let questions = [];
+        let curIdx = 0;
+        let score = 0;
+        let userAns = [];
+        let mode = 'single';
+        let currentSheet = '';
+        let timerInterval;
+
+        // --- CORE FUNCTIONS ---
+        function initApp() {
             try {
-                // Use 'sheet' query param. Default to "Live" if not provided
-                const queryUrl = SHEET_BASE_URL + "&sheet=" + encodeURIComponent(sheetName) + "&t=" + Date.now();
+                const container = document.getElementById('sheet-list');
                 
-                const response = await fetch(queryUrl);
+                let html = '';
+                KNOWN_SHEETS.forEach((sheet, idx) => {
+                    const checked = idx === 0 ? 'checked' : '';
+                    html += `
+                    <div class="mode-select">
+                        <input type="radio" name="sheet" id="sheet-${idx}" value="${sheet}" ${checked}>
+                        <label for="sheet-${idx}">
+                            <div class="mode-icon">📚</div>
+                            <strong>${sheet}</strong>
+                        </label>
+                    </div>`;
+                });
+                container.innerHTML = html;
+                document.getElementById('custom-min').value = "";
+            } catch (e) {
+                console.error("Initialization error:", e);
+                document.getElementById('sheet-list').innerHTML = `<div style="color:red">Error initializing.</div>`;
+            }
+        }
+
+        // Run immediately
+        initApp();
+
+        // --- FETCH & PARSE ---
+        async function fetchQuestionsFromSheet(sheetName) {
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Network response was not ok");
                 const text = await response.text();
-                // Check if valid JSONP response (handling sheet not found)
-                if(!text.includes("google.visualization.Query.setResponse")) {
-                    console.error("Sheet not found or invalid response");
-                    if (sheetName === "Live") {
-                         ALL_QUIZZES = [];
-                    }
-                    return null;
-                }
-
-                const json = JSON.parse(text.substring(text.indexOf("({") + 1, text.lastIndexOf("})") + 1));
-                
-                if (json.status === 'error') {
-                    console.error("GViz Error:", json.errors);
-                    return null;
-                }
-
-                const rows = json.table.rows;
-                
-                if (rows.length > 0) {
-                    CURRENT_LOADED_SHEET = sheetName;
-                    
-                    // 1. Identify Config Row (Always prioritize Row 2 [Index 1])
-                    let configRow = null;
-                    let questionsStartRow = 0;
-
-                    if (rows.length > 1) {
-                        const r1 = rows[1];
-                        // Heuristic: Check if row 2 has ANY config data in O, P, Q, R, U
-                        if (r1.c[14]?.v || r1.c[15]?.v || r1.c[16]?.v || r1.c[17]?.v || r1.c[20]?.v) {
-                            configRow = r1;
-                            questionsStartRow = 1;
-                        }
-                    }
-                    if (!configRow) { configRow = rows[0]; questionsStartRow = 0; }
-
-                    // --- SIGNATURE & FALLBACK DETECTION ---
-                    // Generate a simple signature based on the first question text + option 1
-                    // This assumes that different quizzes will have different first questions.
-                    const firstQ = rows[questionsStartRow]?.c[0]?.v || "";
-                    const firstOpt = rows[questionsStartRow]?.c[1]?.v || "";
-                    const currentSignature = `${firstQ}|${firstOpt}`;
-
-                    if (sheetName === "Live") {
-                        // Store the Live signature for future comparison
-                        LIVE_DATA_SIGNATURE = currentSignature;
-                    } else {
-                        // If checking a Practice Sheet, compare with Live Signature
-                        // If they are identical, it means Google Sheets defaulted to the first sheet (Live) because the requested sheet (e.g. seerat-1) was not found.
-                        if (LIVE_DATA_SIGNATURE && currentSignature === LIVE_DATA_SIGNATURE) {
-                            console.warn(`Fallback detected for sheet: ${sheetName}. Treating as Not Found.`);
-                            return null;
-                        }
-                    }
-
-                    // 2. Parse Config
-                    // O2 (Index 14): Duration in Seconds. If empty, 0.
-                    if (configRow.c[14]?.v && !isNaN(configRow.c[14].v)) {
-                         QUIZ_TIME_LIMIT = Number(configRow.c[14].v);
-                    } else {
-                         QUIZ_TIME_LIMIT = 0;
-                    }
-                    
-                    if (configRow.c[15]?.v) QUIZ_PASSWORD = String(configRow.c[15].v).trim();
-                    
-                    const cellQ = configRow.c[16]; // Start Date
-                    const cellR = configRow.c[17]; // Start Time
-                    const cellS = configRow.c[18]; // End Date
-                    const cellT = configRow.c[19]; // End Time
-                    
-                    // Parse Quiz Name from Sheet U2 (Row 2, Col 21 [Index 20])
-                    if (configRow.c[20]?.v) {
-                        QUIZ_NAME_FROM_SHEET = String(configRow.c[20].v).trim();
-                    } else {
-                        // Default if parsing Live
-                        QUIZ_NAME_FROM_SHEET = sheetName === "Live" ? "সীরাত" : sheetName;
-                    }
-                    
-                    if (cellQ && cellR) {
-                        try {
-                            const dateParts = parseSheetDate(cellQ);
-                            const timeParts = parseSheetTime(cellR);
-                            if (dateParts) {
-                                const d = new Date(dateParts.y, dateParts.m, dateParts.d, timeParts.h, timeParts.m, 0);
-                                if (!isNaN(d.getTime())) {
-                                    GLOBAL_START_TIME = d.getTime();
-                                }
-                            }
-                        } catch (e) { console.error("Start Date parse error", e); }
-                    }
-
-                    if (cellS && cellT) {
-                        try {
-                            const dateParts = parseSheetDate(cellS);
-                            const timeParts = parseSheetTime(cellT);
-                            if (dateParts) {
-                                const d = new Date(dateParts.y, dateParts.m, dateParts.d, timeParts.h, timeParts.m, 0);
-                                if (!isNaN(d.getTime())) {
-                                    GLOBAL_END_TIME = d.getTime();
-                                }
-                            }
-                        } catch (e) { console.error("End Date parse error", e); }
-                    }
-
-                    // 3. Map Questions
-                    const parsedQuestions = rows.slice(questionsStartRow).filter(r => r.c[0]?.v && r.c[0].v !== 'Question' && r.c[0].v !== 'প্রশ্ন').map(row => {
-                        const cells = row.c;
-                        const options = [];
-                        for (let i = 1; i <= 12; i++) if (cells[i]?.v) options.push(String(cells[i].v).trim());
-                        
-                        // FIX: Normalize Bangla numbers in correct answer column
-                        let correctVal = cells[13] ? String(cells[13].v) : "1";
-                        correctVal = parseBanglaNumber(correctVal); 
-                        
-                        let correctIndices = correctVal.includes(",") ? correctVal.split(',').map(s => parseInt(s.trim()) - 1).filter(n => !isNaN(n)) : (!isNaN(parseInt(correctVal)) ? [parseInt(correctVal) - 1] : []);
-                        return { question: cells[0]?.v || "প্রশ্ন লোড হয়নি", options, correctIndices, correctIndex: correctIndices[0], note: "", type: correctIndices.length > 1 ? "multiple" : "single" };
-                    });
-
-                    // Update Global for Homepage ONLY if it's Live
-                    if (sheetName === "Live") {
-                        ALL_QUIZZES = parsedQuestions;
-                        LIVE_QUIZ_ID = QUIZ_NAME_FROM_SHEET; // Update the Live ID for leaderboard filtering
-                        // FORCE UPDATE UI HERE
-                        render(); 
-                        handleQuizCountdown();
-                    }
-                    
-                    return parsedQuestions;
-                }
-                
-                // Only render if fetching "Live" for homepage update
-                if (sheetName === "Live") {
-                    ALL_QUIZZES = []; // Clear if empty
-                    render(); 
-                    handleQuizCountdown();
-                }
-                return null;
-            } catch (error) { 
-                console.error("Error fetching Sheet:", error); 
+                return parseCSV(text);
+            } catch (error) {
+                console.error("Error fetching sheet:", error);
                 return null;
             }
         }
-        // Initial fetch for homepage
-        fetchQuizData("Live");
 
-        const getSavedQuizState = () => {
-            try {
-                const saved = JSON.parse(localStorage.getItem('seerat_quiz_state'));
-                return (saved && saved.expiryTime > Date.now()) ? saved : (localStorage.removeItem('seerat_quiz_state'), null);
-            } catch { return null; }
-        };
+        // Simple CSV Parser to handle quotes and commas inside cells
+        function parseCSV(str) {
+            const arr = [];
+            let quote = false;
+            let row = [];
+            let col = '';
+            
+            for (let c = 0; c < str.length; c++) {
+                let cc = str[c], nc = str[c+1];
+                
+                if (cc === '"') {
+                    if (quote && nc === '"') { 
+                        col += '"'; 
+                        c++; 
+                    } else { 
+                        quote = !quote; 
+                    }
+                } else if (cc === ',' && !quote) {
+                    row.push(col); 
+                    col = '';
+                } else if ((cc === '\r' || cc === '\n') && !quote) {
+                    if (cc === '\r' && nc === '\n') c++; // skip CRLF
+                    row.push(col); 
+                    col = '';
+                    if (row.length > 0 && (row.length > 1 || row[0] !== '')) {
+                        arr.push(row); 
+                    }
+                    row = [];
+                } else {
+                    col += cc;
+                }
+            }
+            if (col || row.length > 0) { 
+                row.push(col); 
+                arr.push(row); 
+            }
+            return arr;
+        }
 
-        const getCalendarWidget = () => {
-            // 1. Get current time in Bangladesh (UTC+6) components
-            const now = new Date();
-            const bdFormatter = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'Asia/Dhaka',
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric'
+        function processRawData(rows, sheetName) {
+            if(!rows || rows.length === 0) return [];
+            
+            return rows.map((row, i) => {
+                // Remove quotes surrounding the string if present from Gviz CSV export
+                // Usually parseCSV handles quotes, but sometimes Gviz adds extra wrapping quotes
+                // The parseCSV above strips the structural quotes.
+                
+                const q = row[0];
+                let opts = [];
+                let correctStr = "";
+                let exp = "";
+
+                // Logic: Scan from end to find Answer Column (Numeric)
+                let correctIdx = -1;
+                for (let j = row.length - 1; j > 0; j--) {
+                    const val = row[j] ? row[j].toString().trim() : "";
+                    if (/^[\d,\s]+$/.test(val)) {
+                        correctIdx = j;
+                        break;
+                    }
+                }
+
+                if (correctIdx === -1) return null;
+
+                // Extract Options
+                for(let k=1; k < correctIdx; k++) {
+                    const o = row[k] ? row[k].toString().trim() : "";
+                    // Filter out the sheet name if it appears in columns
+                    if(o && o !== "" && o !== sheetName) opts.push(o);
+                }
+
+                correctStr = row[correctIdx];
+                exp = row[correctIdx + 1] || "";
+
+                const corr = [];
+                correctStr.split(/[, ]+/).forEach(c => {
+                    const num = parseInt(c);
+                    if(!isNaN(num) && num > 0) corr.push(num - 1);
+                });
+
+                return { id: i, q, opts, correct: corr, exp };
+            }).filter(x => x && x.opts.length > 0);
+        }
+
+        // --- NAVIGATION ---
+        function showScreen(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function toggleTimer(show) {
+            document.getElementById('timer-box').classList.toggle('show', show);
+        }
+
+        // --- QUIZ LOGIC ---
+        async function startQuiz() {
+            const sheetRadio = document.querySelector('input[name="sheet"]:checked');
+            if(!sheetRadio) { alert("দয়া করে একটি বিষয় নির্বাচন করুন"); return; }
+            currentSheet = sheetRadio.value;
+
+            // UI Loading
+            document.getElementById('loading-overlay').style.display = 'flex';
+            document.getElementById('start-btn').disabled = true;
+
+            // Fetch
+            const rawRows = await fetchQuestionsFromSheet(currentSheet);
+            
+            // Process
+            questions = processRawData(rawRows, currentSheet);
+
+            // Hide Loading
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('start-btn').disabled = false;
+
+            if(!questions || questions.length === 0) { 
+                alert("এই বিষয়ে কোন প্রশ্ন লোড করা যায়নি বা শীটটি ফাঁকা। ইন্টারনেট সংযোগ চেক করুন।"); 
+                return; 
+            }
+
+            // Shuffle
+            questions.sort(() => Math.random() - 0.5);
+
+            mode = document.querySelector('input[name="mode"]:checked').value;
+            const timerOn = document.querySelector('input[name="timer"]:checked').value === 'on';
+            
+            if(timerOn) {
+                const min = parseInt(document.getElementById('custom-min').value);
+                if(!min || min < 1) { alert("দয়া করে সঠিক সময় লিখুন"); return; }
+                startTimer(min * 60);
+            }
+
+            curIdx = 0;
+            score = 0;
+            userAns = new Array(questions.length).fill(null);
+            
+            document.getElementById('main-header').style.display = 'none';
+            document.getElementById('main-container').classList.add('no-header');
+            document.getElementById('q-source-badge').innerText = currentSheet;
+
+            showScreen('screen-quiz');
+            if(mode === 'single') renderSingle();
+            else renderFull();
+        }
+
+        function startTimer(seconds) {
+            const display = document.getElementById('timer-val');
+            const bar = document.getElementById('sticky-timer');
+            bar.classList.add('active');
+            
+            timerInterval = setInterval(() => {
+                seconds--;
+                const m = Math.floor(seconds / 60).toString().padStart(2,'0');
+                const s = (seconds % 60).toString().padStart(2,'0');
+                display.innerText = toBanglaNum(`${m}:${s}`);
+                
+                if(seconds <= 0) {
+                    clearInterval(timerInterval);
+                    alert("সময় শেষ!");
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        // --- RENDERERS ---
+        function renderSingle() {
+            const q = questions[curIdx];
+            const isMulti = q.correct.length > 1;
+            
+            document.getElementById('q-progress').innerText = `প্রশ্ন ${toBanglaNum(curIdx+1)} / ${toBanglaNum(questions.length)}`;
+            
+            let html = `<div class="q-text">${q.q}</div>
+                        <div style="font-size:0.9rem; color:#777; margin-bottom:10px; font-style:italic;">
+                            ${isMulti ? "নোট: একাধিক উত্তর সঠিক হতে পারে" : ""}
+                        </div>
+                        <div class="option-group">`;
+            
+            q.opts.forEach((opt, i) => {
+                html += `
+                <div class="option-btn ${isMulti?'multi':''}" id="opt-${i}" onclick="selectOption(${i}, ${isMulti})">
+                    <div class="option-circle"></div>
+                    <span>${opt}</span>
+                </div>`;
             });
-            const parts = bdFormatter.formatToParts(now);
-            const getPart = (type) => parseInt(parts.find(p => p.type === type).value, 10);
+            html += `</div>`;
             
-            // These are the Year, Month, Day in Bangladesh right now
-            const year = getPart('year');
-            const month = getPart('month') - 1; // JS months are 0-11
-            const day = getPart('day');
+            document.getElementById('q-container').innerHTML = html;
+            document.getElementById('explanation').style.display = 'none';
             
-            // Create a date object representing midnight of the BD date in the local browser's timezone
-            // This ensures math with other local dates works predictably (counting full days)
-            const date = new Date(year, month, day);
+            document.getElementById('btn-submit').style.display = 'block';
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-finish').style.display = 'none';
+        }
 
-            // --- Bangla Date Calculation ---
-            const bnMonths = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
-            
-            // Calculate Day of Year relative to April 14th (Pohela Boishakh)
-            const pohelaBoishakh = new Date(year, 3, 14); // April 14
-            let diff = Math.floor((date - pohelaBoishakh) / (1000 * 60 * 60 * 24));
-            
-            let bnYear = year - 593;
-            if (diff < 0) {
-                bnYear = year - 594;
-                const prevPohelaBoishakh = new Date(year - 1, 3, 14);
-                diff = Math.floor((date - prevPohelaBoishakh) / (1000 * 60 * 60 * 24));
-            }
-            
-            // Bangla Academy Rules: First 6 months 31, rest 30. Falgun 29 (30 in leap year).
-            const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-            const bnMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, isLeap ? 30 : 29, 30];
-            
-            let bnMonthIndex = 0;
-            let bnDate = 0;
-            for (let i = 0; i < 12; i++) {
-                if (diff < bnMonthDays[i]) {
-                    bnMonthIndex = i;
-                    bnDate = diff + 1;
-                    break;
-                }
-                diff -= bnMonthDays[i];
-            }
-            
-            // --- Hijri Date (Adjustment for Bangladesh Timezone) ---
-            // Fix: Adjust date by -1 day for Bangladesh moon sighting relative to standard Umm al-Qura
-            const hijriDateAdjusted = new Date(now);
-            hijriDateAdjusted.setDate(now.getDate() - 1);
+        function renderFull() {
+            document.getElementById('q-progress').innerText = `মোট প্রশ্ন: ${toBanglaNum(questions.length)}`;
+            document.getElementById('btn-submit').innerText = "কুইজ জমা দিন";
+            document.getElementById('btn-next').style.display = 'none';
 
-            // using 'en-US' for raw numbers, specific calendar, and BD timezone
-            const hParts = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Asia/Dhaka' }).formatToParts(hijriDateAdjusted);
-            const hDayEn = hParts.find(p => p.type === 'day')?.value;
-            const hMonthIndex = parseInt(hParts.find(p => p.type === 'month')?.value) - 1; 
-            const hYearEn = hParts.find(p => p.type === 'year')?.value.replace(/[^0-9]/g, '');
-            
-            const hijriMonths = ["মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জুমাদাল উলা", "জুমাদাস সানি", "রজব", "শা‘বান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
-            const hDay = toBanglaDigit(hDayEn);
-            const hMonth = hijriMonths[hMonthIndex] || "হিজরি মাস";
-            const hYear = toBanglaDigit(hYearEn);
-
-            // --- English Date (Bangladesh Timezone) ---
-            const enString = new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' }).format(now);
-
-            return `<div class="w-full md:w-auto text-center md:text-left flex flex-col items-center md:items-start relative z-10 pl-2">
-                <div class="flex items-center justify-center md:justify-start gap-5 mb-6">
-                    <span class="text-7xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">${hDay}</span>
-                    <div class="w-px h-16 bg-emerald-200 dark:bg-emerald-800 hidden md:block"></div>
-                    <div class="flex flex-col items-start text-left justify-center">
-                        <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">আজকের তারিখ</span>
-                        <span class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 leading-none mb-1">${hMonth}</span>
-                        <span class="text-lg font-semibold text-slate-500 dark:text-slate-400 leading-none">${hYear} হিজরি</span>
-                    </div>
-                </div>
-                <div class="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4 w-full">
-                    <div><div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${toBanglaDigit(bnDate)} ${bnMonths[bnMonthIndex]}</div><div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${toBanglaDigit(bnYear)} বঙ্গাব্দ</div></div>
-                    <div class="w-px bg-slate-200 dark:bg-slate-700 h-10 self-center hidden md:block"></div>
-                    <div><div class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${enString.split(' ')[0]} ${enString.split(' ')[1]}</div><div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">${enString.split(' ')[2]} খ্রিস্টাব্দ</div></div>
-                </div>
-            </div>`;
-        };
-
-        const render = () => {
-            document.documentElement.classList.toggle('dark', state.darkMode);
-            const app = document.getElementById('app');
             let html = '';
-            if (state.showWaitModal) {
-                html += renderWaitModal();
-            }
-            if (state.alert && state.alert.show) {
-                html += renderAlert();
-            }
-            if (!['quiz', 'quiz_registration', 'quiz_password'].includes(state.view)) {
-                html += `<div class="sticky top-0 z-50 w-full flex flex-col">${renderHeader()}${state.view === 'home' ? renderNoticeBar() : ''}</div>`;
-            }
-            if (state.view === 'home') {
-                html += renderHome() + renderFooter();
-            }
-            else if (state.view === 'detail') html += renderDetail() + renderFooter();
-            else if (state.view === 'quiz_password') html += renderPasswordPrompt();
-            else if (state.view === 'quiz_registration') html += renderQuizRegistration();
-            else if (state.view === 'quiz') html += renderQuiz();
-            else if (state.view === 'leaderboard') html += renderLeaderboard();
+            questions.forEach((q, idx) => {
+                const isMulti = q.correct.length > 1;
+                html += `<div style="margin-bottom:30px; border-bottom:1px solid #eee; padding-bottom:20px;">
+                    <div class="q-number">প্রশ্ন ${toBanglaNum(idx+1)}</div>
+                    <div class="q-text" style="font-size:1.2rem; margin-bottom:10px;">${q.q}</div>
+                    <div class="option-group">`;
+                
+                q.opts.forEach((opt, i) => {
+                    html += `
+                    <div class="option-btn ${isMulti?'multi':''}" id="q${idx}-opt${i}" onclick="selectOptionFull(${idx}, ${i}, ${isMulti})">
+                        <div class="option-circle"></div>
+                        <span>${opt}</span>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+            document.getElementById('q-container').innerHTML = html;
+        }
 
-            app.innerHTML = html;
-            lucide.createIcons();
-            if (state.view === 'home') {
-                // REMOVED AUTO-FOCUS ON SEARCH INPUT HERE
-                // START LIVE COUNTDOWN HANDLER
-                handleQuizCountdown();
+        // --- INTERACTIONS ---
+        let currentSelection = [];
+        
+        function selectOption(idx, isMulti) {
+            if(document.getElementById('btn-submit').style.display === 'none') return;
+
+            if(isMulti) {
+                if(currentSelection.includes(idx)) currentSelection = currentSelection.filter(i=>i!==idx);
+                else currentSelection.push(idx);
             } else {
-                // Clear interval if leaving home
-                if (quizCountdownInterval) clearInterval(quizCountdownInterval);
+                currentSelection = [idx];
             }
-            if (state.view === 'quiz_password') document.getElementById('quiz-pass-input')?.focus();
-        };
+            updateUISelection();
+        }
 
-        // --- NEW FUNCTION: Live Countdown on Button ---
-        const handleQuizCountdown = () => {
-            if (quizCountdownInterval) clearInterval(quizCountdownInterval);
-            
-            const btn = document.getElementById('quiz-start-btn');
-            const countdownDisplay = document.getElementById('quiz-countdown-display');
-            const noteEl = document.getElementById('quiz-schedule-text');
-            if (!btn) return;
-            
-            // Logic 1: If NO global schedule (no start time), it's always open (unless no questions)
-            // But if we have Start Time, we enforce rules.
-            
-            if (!GLOBAL_START_TIME) {
-                 // No schedule defined, button is just "Enter Quiz"
-                 // Check saved state first even if no schedule
-                 const saved = getSavedQuizState();
-                 if (saved && saved.expiryTime > Date.now()) {
-                     const diff = saved.expiryTime - Date.now();
-                     btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz}`;
-                     if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(diff)}`;
-                     btn.onclick = () => window.actions.resumeQuiz();
-                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-700 btn-3d w-full";
-                 } else {
-                     btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
-                     if (countdownDisplay) countdownDisplay.innerText = "";
-                     btn.onclick = () => window.actions.startQuiz();
-                     btn.disabled = false;
-                     btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100 w-full";
-                 }
-                 lucide.createIcons();
-                 
-                 // If saved state exists, we need interval to update countdown
-                 if (saved && saved.expiryTime > Date.now()) {
-                     quizCountdownInterval = setInterval(() => {
-                         const now = Date.now();
-                         const diff = saved.expiryTime - now;
-                         if (diff <= 0) {
-                             // Expired
-                             btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.startGlobalQuiz}`;
-                             if (countdownDisplay) countdownDisplay.innerText = "";
-                             btn.onclick = () => window.actions.startQuiz();
-                             btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100 w-full";
-                             clearInterval(quizCountdownInterval);
-                         } else {
-                             if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(diff)}`;
-                         }
-                     }, 1000);
-                 }
-                 
-                 return;
+        function updateUISelection() {
+            document.querySelectorAll('.option-btn').forEach((el, i) => {
+                const idx = parseInt(el.id.split('-')[1]);
+                if(currentSelection.includes(idx)) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+        }
+
+        function selectOptionFull(qIdx, oIdx, isMulti) {
+            let ans = userAns[qIdx] || [];
+            if(isMulti) {
+                if(ans.includes(oIdx)) ans = ans.filter(i=>i!==oIdx);
+                else ans.push(oIdx);
+            } else {
+                ans = [oIdx];
             }
+            userAns[qIdx] = ans;
+            
+            const parent = document.getElementById(`q${qIdx}-opt${oIdx}`).parentNode;
+            Array.from(parent.children).forEach((el, i) => {
+                if(ans.includes(i)) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+        }
 
-            const update = () => {
-                const now = Date.now();
-                const saved = getSavedQuizState();
-
-                // 1. Resume Logic (Top Priority)
-                if (saved && saved.expiryTime > now) {
-                    const diff = saved.expiryTime - now;
-                    btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> ${TEXTS.resumeQuiz}`;
-                    if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(diff)}`;
-                    btn.disabled = false;
-                    btn.onclick = () => window.actions.resumeQuiz();
-                    // Resume Button Style: White BG, Green Text, distinct border
-                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border-2 border-emerald-500 shadow-emerald-500/20 w-full";
-                    lucide.createIcons();
-                    return;
+        // --- SUBMIT ---
+        function submitAnswer() {
+            if(mode === 'full') {
+                if(confirm("আপনি কি নিশ্চিত যে আপনি কুইজ জমা দিতে চান?")) {
+                    finishQuiz();
                 }
+                return;
+            }
 
-                // 2. Schedule Logic (No Active Session)
-                // Determine effective end time for countdown display
-                const endTime = GLOBAL_END_TIME 
-                    ? GLOBAL_END_TIME 
-                    : GLOBAL_START_TIME + (QUIZ_TIME_LIMIT * 1000);
+            if(currentSelection.length === 0) return;
+            
+            const q = questions[curIdx];
+            userAns[curIdx] = [...currentSelection];
+            
+            q.opts.forEach((_, i) => {
+                const el = document.getElementById(`opt-${i}`);
+                el.classList.remove('selected');
+                if(q.correct.includes(i)) el.classList.add('correct');
+                else if(currentSelection.includes(i)) el.classList.add('wrong');
+            });
+
+            document.getElementById('exp-text').innerText = q.exp || "কোন ব্যাখ্যা নেই।";
+            document.getElementById('explanation').style.display = 'block';
+
+            document.getElementById('btn-submit').style.display = 'none';
+            if(curIdx < questions.length - 1) {
+                document.getElementById('btn-next').style.display = 'block';
+            } else {
+                document.getElementById('btn-finish').style.display = 'block';
+            }
+            
+            currentSelection = [];
+        }
+
+        function nextQuestion() {
+            curIdx++;
+            renderSingle();
+        }
+
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            document.getElementById('sticky-timer').classList.remove('active');
+            document.getElementById('main-header').style.display = 'block'; 
+            document.getElementById('main-container').classList.remove('no-header');
+            
+            score = 0;
+            questions.forEach((q, i) => {
+                const u = (userAns[i] || []).sort().toString();
+                const c = q.correct.sort().toString();
+                if(u === c) score++;
+            });
+
+            showScreen('screen-result');
+            document.getElementById('score-val').innerText = toBanglaNum(score);
+            document.getElementById('score-max').innerText = "/" + toBanglaNum(questions.length);
+            
+            const pct = (score / questions.length) * 100;
+            let msg = "";
+            if(pct >= 80) msg = "মাশাআল্লাহ! চমৎকার হয়েছে";
+            else if(pct >= 50) msg = "আলহামদুলিল্লাহ, ভালো প্রচেষ্টা";
+            else msg = "আরও পড়াশোনা করা প্রয়োজন";
+            document.getElementById('feedback-msg').innerText = msg;
+
+            let revHtml = "";
+            questions.forEach((q, i) => {
+                const u = userAns[i] || [];
+                const isCorr = JSON.stringify(u.sort()) === JSON.stringify(q.correct.sort());
+                const uText = u.map(idx => q.opts[idx]).join(", ");
+                const cText = q.correct.map(idx => q.opts[idx]).join(", ");
                 
-                // Determine Scenarios for Text Update
-                const isScenario2 = (QUIZ_TIME_LIMIT > 0 && GLOBAL_END_TIME);
-                const isScenario3 = (!QUIZ_TIME_LIMIT && GLOBAL_END_TIME);
-
-                // Before Start
-                if (now < GLOBAL_START_TIME) {
-                    const timeToStart = GLOBAL_START_TIME - now;
-                    btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> অপেক্ষা করুন`; 
-                    if (countdownDisplay) countdownDisplay.innerText = `শুরু হতে বাকি: ${formatCountdown(timeToStart)}`;
-                    btn.disabled = true;
-                    // Yellow button with black text as requested
-                    btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-yellow-400 text-stone-900 border-yellow-500 btn-3d w-full cursor-not-allowed opacity-90";
-                } 
-                // After Start
-                else {
-                    // Check End Time if exists (Hard Stop or Entry Stop)
-                    if (GLOBAL_END_TIME && now >= GLOBAL_END_TIME) {
-                        btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> ${TEXTS.quizEnded}`;
-                        if (countdownDisplay) countdownDisplay.innerText = "";
-                        btn.disabled = true;
-                        // Red background, white text for ended state
-                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-red-600 text-white cursor-not-allowed border border-red-700 opacity-90 w-full";
-                        
-                        // Update Schedule Note Text to Telegram Link
-                        if (noteEl) {
-                           noteEl.innerHTML = `পরবর্তী কুইজের জন্য <a href="https://t.me/seerat2026" target="_blank" class="inline-flex items-center gap-1 font-bold underline hover:text-emerald-200 transition-colors">${SVGS.telegram} টেলিগ্রাম</a> গ্রুপে চোখ রাখুন`;
+                revHtml += `
+                <div class="review-card">
+                    <div style="font-weight:bold; margin-bottom:5px; color:#145A32;">${toBanglaNum(i+1)}. ${q.q}</div>
+                    <div style="font-size:0.9rem;">
+                        ${isCorr ? 
+                            `<span style="color:green; font-weight:bold;">✔ সঠিক</span>` : 
+                            `<span style="color:#C0392B; font-weight:bold;">✘ ভুল (আপনার উত্তর: ${uText||'ফাঁকা'})</span>`
                         }
-                        
-                        clearInterval(quizCountdownInterval); // Stop loop
-                    } else {
-                        // Running Phase
-                        // If End Time exists, show countdown to end on button
-                        if (GLOBAL_END_TIME) {
-                            const timeToEnd = GLOBAL_END_TIME - now;
-                            if (countdownDisplay) countdownDisplay.innerText = `শেষ হতে বাকি: ${formatCountdown(timeToEnd)}`;
-                        } else {
-                            if (countdownDisplay) countdownDisplay.innerText = "";
-                        }
-                        
-                        btn.innerHTML = `<i data-lucide="play-circle" class="w-5 h-5"></i> পরীক্ষা শুরু করুন`;
-                        btn.disabled = false;
-                        btn.onclick = () => window.actions.startQuiz();
-                        btn.className = "px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-emerald-50 btn-3d border border-emerald-100 w-full";
-                        
-                        // --- LIVE NOTE UPDATE FOR SCENARIO 2 ---
-                        if (noteEl) {
-                            if (isScenario2) {
-                                // "কুইজ চলছে! শেষ সময়: [Date String]"
-                                const e = new Date(GLOBAL_END_TIME);
-                                const eDate = e.toLocaleString('bn-BD', { day: 'numeric', month: 'long', timeZone: 'Asia/Dhaka' });
-                                const eTime = e.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
-                                const newText = `কুইজ চলছে! শেষ সময়: ${eDate} ${eTime}`; // Matches user request exactly
-                                if (noteEl.innerText !== newText) noteEl.innerText = newText;
-                            } else if (isScenario3 || (!isScenario2 && !isScenario3)) {
-                                if (noteEl.innerText !== TEXTS.quizRunning) noteEl.innerText = TEXTS.quizRunning;
-                            }
-                        }
-                    }
-                }
-                lucide.createIcons();
-            };
-
-            // Run once immediately, then interval
-            update();
-            quizCountdownInterval = setInterval(update, 1000);
-        };
-
-        const renderHeader = () => `
-            <header class="shadow-md backdrop-blur-md border-b bg-white/90 border-stone-200 dark:bg-slate-900/90 dark:border-slate-700">
-                <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-                    <div class="flex items-center gap-3 cursor-pointer" onclick="actions.goHome()">
-                        <div class="p-2 rounded-lg bg-emerald-500 dark:bg-emerald-600 text-white">${MosqueIcon()}</div>
-                        <div><h1 class="text-lg md:text-xl font-bold leading-tight text-emerald-700 dark:text-emerald-400">${TEXTS.siteTitle}</h1><p class="text-xs opacity-70 hidden sm:block">${TEXTS.subtitle}</p></div>
                     </div>
-                    <div class="flex items-center gap-2 md:gap-3">
-                        <button onclick="actions.toggleTheme()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition">
-                            <i data-lucide="${state.darkMode ? 'sun' : 'moon'}" class="${state.darkMode ? 'text-amber-400' : 'text-slate-600'} w-5 h-5"></i>
-                        </button>
-                    </div>
-                </div>
-            </header>`;
-
-        const renderNoticeBar = () => `
-            <div class="w-full overflow-hidden py-3 shadow-md relative z-10 border-b bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-900 dark:text-emerald-100 dark:border-emerald-800">
-                <div class="animate-marquee flex items-center">
-                    ${Array(3).fill(`<div class="flex items-center shrink-0 px-8"><span class="font-extrabold flex items-center gap-2 px-2"><i data-lucide="bell-ring" class="w-4 h-4" fill="currentColor"></i> নোটিশ:</span><span class="text-base font-bold tracking-wide">${GLOBAL_NOTICE}</span></div>`).join('')}
-                </div>
-            </div>`;
-
-        const renderHome = () => {
-            const filtered = COURSE_DATA.filter(l => (state.filter === 'all' || l.category === state.filter) && (l.content.title.toLowerCase().includes(state.search.toLowerCase()) || l.content.description.toLowerCase().includes(state.search.toLowerCase())));
-            const savedState = getSavedQuizState();
-            
-            // Initial placeholders, will be updated by handleQuizCountdown
-            let scheduleNote = ""; 
-            if (GLOBAL_START_TIME) {
-                const d = new Date(GLOBAL_START_TIME);
-                const datePart = d.toLocaleString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' });
-                const timePart = d.toLocaleString('bn-BD', { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka' });
-                scheduleNote = `পরবর্তী কুইজ: ${datePart} ${timePart}`;
-            }
-
-            return `
-            <main class="container mx-auto px-4 py-4 md:py-6 min-h-[calc(100vh-140px)] animate-fade-in">
-                <div class="rounded-3xl p-5 md:p-6 border mb-6 bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/50 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800 relative overflow-hidden">
-                    <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 relative z-10">
-                        <div class="shrink-0 flex justify-center md:justify-start">${getCalendarWidget()}</div>
-                        <div class="hidden md:block w-px h-32 bg-gradient-to-b from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                        <div class="text-center space-y-3">
-                            <h2 class="text-2xl md:text-4xl font-black leading-tight tracking-tight text-slate-800 dark:text-white">
-                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">কুরআন তাফসির</span> ও সীরাত কোর্স
-                            </h2>
-                            <p class="opacity-70 text-sm md:text-base leading-relaxed font-medium max-w-md mx-auto text-slate-600 dark:text-slate-300">কুরআনের গভীর জ্ঞান এবং রাসূল (সা.) এর জীবনের শিক্ষণীয় ঘটনাবলী জানতে আমাদের এই আয়োজন।</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 bg-[length:200%_auto] animate-gradient-xy rounded-xl p-6 text-white mb-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-white/5 skew-x-[-15deg] w-1/4 animate-shine blur-lg opacity-30"></div>
-                    <div class="space-y-2 relative z-10">
-                        <h3 class="text-2xl font-bold flex items-center gap-2">
-                             <i data-lucide="trophy" class="w-6 h-6 text-yellow-300 fill-yellow-400"></i>
-                             ${QUIZ_NAME_FROM_SHEET} কুইজ পরীক্ষা
-                        </h3>
-                        <p class="opacity-90 max-w-lg">${scheduleNote ? `<span id="quiz-schedule-text" class="inline-block bg-white/20 px-2 py-0.5 rounded text-sm font-bold mt-1">${scheduleNote}</span>` : TEXTS.globalQuizDesc}</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3 relative z-10 items-end">
-                        <button onclick="actions.viewLeaderboard()" class="flex-1 w-full bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="list-ordered" class="w-5 h-5"></i> ${TEXTS.viewLeaderboard}</button>
-                        <button onclick="actions.viewAnswerKey()" class="flex-1 w-full bg-teal-900/80 hover:bg-teal-950 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap border-none backdrop-blur-sm btn-3d"><i data-lucide="book-open-check" class="w-5 h-5"></i> উত্তর দেখুন</button>
-                        
-                        <div class="flex flex-col items-center gap-1 flex-1 w-full">
-                            <div id="quiz-countdown-display" class="text-xs font-bold text-yellow-200 animate-pulse tracking-wide min-h-[16px]"></div>
-                            <button id="quiz-start-btn" class="w-full px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 whitespace-nowrap bg-white text-emerald-700 hover:bg-white btn-3d border border-emerald-100">
-                                <i data-lucide="loader" class="w-5 h-5 animate-spin"></i> লোড হচ্ছে...
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col md:flex-row gap-4 justify-between items-center sticky top-20 z-30 py-2 mb-8">
-                    <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
-                        ${['seerat', 'jummah', 'halakah', 'tafsir'].map(cat => `<button onclick="actions.setFilter('${cat}')" class="px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${state.filter === cat ? 'bg-emerald-600 text-white shadow-glow dark:shadow-none' : 'bg-white hover:bg-stone-100 border border-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700'}">${TEXTS[cat]}</button>`).join('')}
-                    </div>
-                    <div class="relative w-full md:w-64">
-                        <input id="searchInput" type="text" placeholder="${TEXTS.searchPlaceholder}" class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm bg-white placeholder-stone-400 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-slate-500 dark:text-white" oninput="actions.setSearch(this.value)" value="${state.search}">
-                        <i data-lucide="search" class="absolute left-3 top-2.5 opacity-50 w-4 h-4"></i>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${filtered.length > 0 ? filtered.map(l => renderLectureCard(l)).join('') : renderEmptyState()}
-                </div>
-            </main>`;
-        };
-
-        const renderLectureCard = (lecture) => {
-            const badgeBg = { 
-                tafsir: 'bg-emerald-100 text-emerald-600', 
-                seerat: 'bg-amber-100 text-amber-600', 
-                halakah: 'bg-rose-100 text-rose-600',
-                jummah: 'bg-blue-100 text-blue-600'
-            }[lecture.category] || 'bg-stone-100';
-
-            const catColor = { 
-                tafsir: 'bg-emerald-500', 
-                seerat: 'bg-amber-500', 
-                halakah: 'bg-rose-500',
-                jummah: 'bg-blue-500'
-            }[lecture.category] || 'bg-emerald-500';
-
-            return `
-            <div onclick="actions.selectLecture(${lecture.id})" class="group relative cursor-pointer rounded-2xl overflow-hidden border transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
-                <div class="p-6 relative z-10">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest shadow-sm bg-stone-100 text-stone-600 dark:bg-slate-700 dark:text-slate-300">${TEXTS[lecture.category]}</span>
-                        <div class="flex flex-col items-end gap-1"><div class="flex items-center gap-1.5 text-xs opacity-60 font-semibold uppercase tracking-wide"><i data-lucide="calendar" class="w-3 h-3"></i> <span>${lecture.date}</span></div></div>
-                    </div>
-                    <h3 class="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-emerald-600 transition-colors text-slate-800 dark:text-slate-100">${lecture.content.title}</h3>
-                    <p class="text-sm opacity-70 line-clamp-2 leading-relaxed mb-6 font-medium">${lecture.content.description}</p>
-                    <div class="flex items-center justify-between pt-4 border-t border-dashed border-gray-200 dark:border-gray-700">
-                         <div class="flex items-center gap-2 text-xs font-bold opacity-60"><div class="p-1 rounded bg-gray-100 dark:bg-slate-700"><i data-lucide="clock" class="w-3 h-3"></i></div><span>${lecture.duration}</span></div>
-                         <div class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-500 px-4 py-2 rounded-full shadow-lg shadow-emerald-500/20 group-hover:bg-emerald-600 transition-all group-hover:scale-105">${TEXTS.listen} <i data-lucide="play" class="w-3 h-3 fill-current"></i></div>
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 w-full h-1 ${catColor} opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>`;
-        };
-
-        const renderEmptyState = () => `<div class="col-span-full text-center py-20 opacity-50"><div class="inline-block p-4 rounded-full bg-gray-100 dark:bg-slate-800 mb-2"><i data-lucide="search" class="w-6 h-6"></i></div><p class="text-lg font-medium">${TEXTS.noResults}</p></div>`;
-
-        const renderFooter = () => `<footer class="py-8 text-center text-sm opacity-60 border-t border-stone-200 dark:border-slate-800"><div class="container mx-auto px-4"><p class="font-medium tracking-wide">${TEXTS.footerText}</p></div></footer>`;
-
-        const renderDetail = () => {
-            const l = state.selectedLecture;
-            let badgeClass = l.category === 'seerat' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : 
-                             (l.category === 'halakah' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200' : 
-                             (l.category === 'jummah' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                             'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'));
-            
-            const resourcesHTML = l.content.resources.length > 0 ? `<ul class="space-y-3">` + l.content.resources.map(res => `<li><a href="${res.url}" class="flex items-center gap-3 text-sm p-4 rounded-xl transition-all duration-200 border border-transparent hover:shadow-md bg-white hover:border-emerald-100 text-emerald-800 shadow-sm dark:bg-slate-700/50 dark:hover:bg-slate-700 dark:text-emerald-400"><div class="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><i data-lucide="external-link" class="w-4 h-4"></i></div><span class="font-medium">${res.label}</span></a></li>`).join('') + `</ul>` : `<p class="text-sm opacity-50 italic">কোনো নোট যুক্ত করা হয়নি</p>`;
-            
-            // Practice & Archive Section
-            let practiceSectionHTML = "";
-            if (l.quizInfo) {
-                practiceSectionHTML = `
-                <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-bold flex items-center gap-2 pb-4 opacity-90"><i data-lucide="pen-tool" class="w-5 h-5 text-emerald-500"></i> অনুশীলন ও আর্কাইভ</h3>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button onclick="actions.startPractice('${l.quizInfo.sheetName}')" class="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm"><i data-lucide="play-circle" class="w-4 h-4"></i> অনুশীলন শুরু করুন</button>
-                        <button onclick="actions.viewArchiveLeaderboard('${l.quizInfo.quizId}', '${l.quizInfo.title}')" class="flex-1 py-3 px-4 rounded-xl bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 hover:shadow-md font-bold shadow-sm transition-all flex items-center justify-center gap-2 text-sm"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i> ${l.quizInfo.title} এর মেধাতালিকা</button>
-                        <button onclick="actions.viewArchiveAnswerKey('${l.quizInfo.sheetName}')" class="flex-1 py-3 px-4 rounded-xl bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:hover:bg-blue-900/40 dark:text-blue-200 font-bold shadow-sm transition-all flex items-center justify-center gap-2 text-sm"><i data-lucide="book-open-check" class="w-4 h-4"></i> উত্তর দেখুন</button>
-                    </div>
+                    <div style="font-size:0.9rem; color:#555; margin-top:5px;">সঠিক উত্তর: <b>${cText}</b></div>
+                    <div style="background:#F4F8F5; padding:8px; margin-top:5px; font-size:0.85rem; border-radius:4px;">${q.exp}</div>
                 </div>`;
-            }
+            });
+            document.getElementById('review-list').innerHTML = revHtml;
+        }
 
-            return `
-            <main class="container mx-auto px-4 py-6 md:py-10 min-h-[calc(100vh-140px)] animate-fade-in">
-                <div class="max-w-4xl mx-auto space-y-6">
-                    <button onclick="actions.goHome()" class="flex items-center justify-center gap-2 text-sm font-bold hover:text-emerald-500 transition-colors text-slate-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 border border-stone-200 dark:border-slate-700 rounded-full px-4 py-2 shadow-sm hover:shadow-md"><i data-lucide="arrow-left" class="w-4 h-4"></i> ${TEXTS.back}</button>
-                    <div class="rounded-2xl p-6 md:p-8 border shadow-soft bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
-                        <div class="mb-8 space-y-3">
-                             <div class="flex flex-wrap gap-3 items-center mb-3">
-                                <span class="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${badgeClass}">${TEXTS[l.category]}</span>
-                                <span class="text-xs opacity-60 flex items-center gap-1 font-medium"><i data-lucide="calendar" class="w-3 h-3"></i> ${l.date}</span>
-                                <span class="text-xs opacity-60 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3 h-3"></i> ${l.duration}</span>
-                            </div>
-                            <h1 class="text-2xl md:text-4xl font-bold leading-tight text-emerald-900 dark:text-emerald-100">${l.content.title}</h1>
-                            <p class="opacity-80 text-lg leading-relaxed">${l.content.description}</p>
-                        </div>
-                        <div class="p-6 rounded-2xl mb-10 flex flex-col items-center justify-center gap-6 shadow-inner bg-stone-50 dark:bg-slate-900">
-                            <div class="w-full flex flex-col items-center text-center gap-4">
-                                ${state.playerMode === 'embed' ? `<div class="w-full max-w-3xl bg-emerald-900 rounded-xl overflow-hidden shadow-2xl relative animate-fade-in ring-1 ring-emerald-900/50"><div class="p-2 text-center text-xs text-white/80 bg-emerald-800/80 backdrop-blur-sm flex items-center justify-center gap-2"><i data-lucide="info" class="w-3 h-3"></i> গুগল ড্রাইভের বড় ফাইলের ক্ষেত্রে "Virus Scan Warning" দেখানো স্বাভাবিক।</div><iframe src="${getDriveEmbedLink(l.driveLink)}" class="w-full h-[120px] border-0" allow="autoplay" loading="lazy" title="Audio Player"></iframe></div>` : ''}
-                                <div class="flex flex-col items-center gap-3 w-full max-w-md"><a href="${l.driveLink}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95"><i data-lucide="download" class="w-5 h-5"></i> ${TEXTS.playOnDrive} / ${TEXTS.download}</a></div>
-                            </div>
-                        </div>
-                        ${l.content.syllabus ? `<div class="p-6 rounded-2xl border-l-4 shadow-sm mb-10 bg-indigo-50 border-indigo-500 text-indigo-900 dark:bg-indigo-900/20 dark:text-indigo-100"><div class="flex items-start gap-4"><div class="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg shrink-0"><i data-lucide="book-marked" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i></div><div><h3 class="font-bold text-lg mb-2">${TEXTS.syllabus}</h3><p class="leading-relaxed opacity-90 font-medium">${l.content.syllabus}</p></div></div></div>` : ''}
-                        <div class="space-y-4"><h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-gray-700 opacity-80"><i data-lucide="folder-open" class="w-5 h-5 text-emerald-500"></i> ${TEXTS.resources}</h3>${resourcesHTML}</div>
-                        ${practiceSectionHTML}
-                    </div>
-                </div>
-            </main>`;
-        };
-
-        const renderPasswordPrompt = () => `
-            <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden border p-8 relative bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
-                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5 opacity-60"></i></button>
-                    <div class="text-center mb-8">
-                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock" class="w-8 h-8"></i></div>
-                        <h2 class="text-xl font-bold mb-2">আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ</h2><p class="text-sm opacity-60">কুইজটিতে অংশগ্রহণ করতে পাসওয়ার্ড প্রয়োজন</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold opacity-80 block">পাসওয়ার্ড</label>
-                            <div class="relative">
-                                <input type="password" id="quiz-pass-input" placeholder="পাসওয়ার্ড লিখুন..." class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500 pr-12" onkeyup="if(event.key === 'Enter') actions.verifyPassword()">
-                                <button onclick="actions.togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 opacity-50 hover:opacity-100 transition" id="pass-toggle-btn">
-                                    ${SVGS.eye}
-                                </button>
-                            </div>
-                        </div>
-                        <p id="pass-error-msg" class="text-rose-500 text-sm font-bold text-center hidden">ভুল পাসওয়ার্ড! অনুগ্রহ করে উস্তায জীর সাথে যোগাযোগ করুন।</p>
-                        <button onclick="actions.verifyPassword()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-2">নিশ্চিত করুন <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
-                    </div>
-                </div>
-            </div>`;
-
-        // --- NEW: Time Restriction Wait Modal ---
-        const renderWaitModal = () => {
-            const endTimeString = GLOBAL_END_TIME ? new Date(GLOBAL_END_TIME).toLocaleString('bn-BD', {
-                month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'Asia/Dhaka'
-            }) : 'অনির্ধারিত';
-
-            return `
-            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-stone-200 dark:border-slate-700 relative scale-100 transition-transform">
-                    <button onclick="actions.closeWaitModal()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5 opacity-50"></i></button>
-                    <div class="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                        <i data-lucide="hourglass" class="w-10 h-10"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3 text-stone-800 dark:text-white">অপেক্ষা করুন</h3>
-                    <p class="text-stone-600 dark:text-slate-300 mb-6 text-sm leading-relaxed">কুইজ চলাকালীন সময়ে মেধাতালিকা বা উত্তর দেখা যাবে না। দয়া করে কুইজের সময় শেষ হওয়া পর্যন্ত অপেক্ষা করুন।</p>
-                    
-                    <div class="bg-stone-50 dark:bg-slate-700/30 border border-stone-100 dark:border-slate-700 rounded-xl p-4 mb-6">
-                         <span class="text-base font-bold uppercase tracking-widest opacity-70 block mb-1">কুইজ শেষ হওয়ার সময়</span>
-                         <span class="text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">${endTimeString}</span>
-                    </div>
-
-                    <button onclick="actions.closeWaitModal()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg transition-all active:scale-95">ঠিক আছে</button>
-                </div>
-            </div>`;
-        };
-
-        const renderAlert = () => `
-        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-stone-200 dark:border-slate-700 relative scale-100 transition-transform">
-                <div class="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="alert-circle" class="w-8 h-8"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2 text-stone-800 dark:text-white">সতর্কতা</h3>
-                <p class="text-stone-600 dark:text-slate-300 mb-6 text-sm leading-relaxed">${state.alert.message}</p>
-                <button onclick="actions.closeAlert()" class="w-full py-3 rounded-xl bg-stone-800 hover:bg-stone-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold shadow-lg transition-all active:scale-95">ঠিক আছে</button>
-            </div>
-        </div>`;
-
-        const renderQuizRegistration = () => `
-            <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                <div class="max-w-md w-full rounded-2xl shadow-xl overflow-hidden border p-8 relative bg-white border-stone-200 dark:bg-slate-800 dark:border-slate-700">
-                    <button onclick="actions.goHome()" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5 opacity-60"></i></button>
-                    <div class="text-center mb-8">
-                        <p class="font-serif text-2xl text-emerald-600 dark:text-emerald-400 mb-4 font-bold">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
-                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="user-plus" class="w-8 h-8"></i></div>
-                        <h2 class="text-2xl font-bold mb-2">${TEXTS.enterDetails}</h2><p class="text-sm opacity-60">${state.quiz.isPractice ? "অনুশীলনের জন্য আপনার নাম দিন (মেধাতালিকায় যুক্ত হবে না)" : "কুইজ শুরু করার আগে দয়া করে আপনার পরিচয় দিন"}</p>
-                    </div>
-                    <div class="space-y-5">
-                        <div class="space-y-2"><label class="text-sm font-bold opacity-80 block">${TEXTS.nameLabel}</label><input type="text" id="reg-name" placeholder="${TEXTS.namePlaceholder}" class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500" onkeyup="if(event.key === 'Enter') actions.submitRegistration()"></div>
-                        <div class="space-y-2"><label class="text-sm font-bold opacity-80 block">${TEXTS.guardianLabel}</label><input type="text" id="reg-guardian" placeholder="${TEXTS.guardianPlaceholder}" class="w-full px-4 py-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition border-gray-300 placeholder-gray-400 dark:border-slate-600 dark:placeholder-slate-500" onkeyup="if(event.key === 'Enter') actions.submitRegistration()"></div>
-                        <button onclick="actions.submitRegistration()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4">${TEXTS.start} <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
-                    </div>
-                </div>
-            </div>`;
-
-        // -- QUIZ & REVIEW --
-        const getOptionClass = (isSelected, isRight, isReview) => {
-             if (isReview) {
-                 if (isRight) return "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-500/30 dark:text-emerald-300";
-                 if (isSelected && !isRight) return "bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/30 dark:border-rose-500/30 dark:text-rose-300";
-                 return "border-gray-100 text-gray-500 dark:border-slate-700 dark:opacity-50";
-             } else {
-                 // Active Quiz
-                 if (isSelected) return "bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 shadow-md dark:bg-emerald-900/40 dark:border-emerald-500 dark:ring-emerald-500";
-                 return "bg-white border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/30 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-750";
-             }
-        };
-
-        const renderQuiz = () => {
-            const { questions, userAnswers, score, isFinished, isReviewing, timeLeft, userName, userGuardian } = state.quiz;
-            const banglaIndices = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ", "ঝ", "ঞ", "ট", "ঠ"];
-
-            // 1. REVIEW MODE
-            if (isReviewing) {
-                return `
-                <div class="min-h-screen pb-20 animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                    <div class="p-4 md:px-8 border-b backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-sm border-stone-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
-                        <button onclick="actions.exitReview()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2"><i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span></button>
-                        <div class="font-bold text-lg">উত্তরপত্র পর্যালোচনা</div><div class="w-10"></div>
-                    </div>
-                    <div class="max-w-3xl mx-auto p-4 flex justify-end"><button onclick="actions.goHome()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-emerald-700 transition flex items-center justify-center gap-2"><i data-lucide="home" class="w-4 h-4"></i> ${TEXTS.goHome}</button></div>
-                    <div class="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
-                        ${questions.map((q, idx) => {
-                            const uAns = (userAnswers[idx] || []).slice().sort((a, b) => a - b);
-                            const cAns = q.correctIndices.slice().sort((a, b) => a - b);
-                            const isCorrect = JSON.stringify(uAns) === JSON.stringify(cAns);
-                            
-                            return `
-                            <div class="rounded-2xl border-l-4 shadow-sm overflow-hidden bg-white dark:bg-slate-800 ${isCorrect ? 'border-emerald-500' : 'border-rose-500'}">
-                                <div class="p-5 flex gap-4">
-                                    <div class="shrink-0 mt-0.5"><div class="w-6 h-6 rounded-full text-white flex items-center justify-center ${isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}">${isCorrect ? SVGS.check : SVGS.x}</div></div>
-                                    <div class="space-y-4 w-full">
-                                        <h4 class="font-bold text-lg leading-relaxed"><span class="opacity-40 mr-2">${toBanglaDigit(idx + 1)}.</span>${q.question}</h4>
-                                        <div class="space-y-2">
-                                            ${q.options.map((opt, optIdx) => {
-                                                const isRight = q.correctIndices.includes(optIdx);
-                                                const isSel = (userAnswers[idx] || []).includes(optIdx);
-                                                
-                                                // Darker background circle for better visibility in review
-                                                let circleClass = "bg-slate-800 text-white border border-slate-600"; 
-                                                if (isRight) circleClass = "bg-emerald-600 text-white border-emerald-600";
-                                                else if (isSel && !isRight) circleClass = "bg-rose-600 text-white border-rose-600";
-
-                                                return `
-                                                <div class="p-3 rounded-lg border flex justify-between items-center text-sm gap-3 ${getOptionClass(isSel, isRight, true)}">
-                                                    <div class="flex items-center gap-3 flex-1">
-                                                        <div class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shadow-sm ${circleClass}">
-                                                            ${banglaIndices[optIdx] || (optIdx + 1)}
-                                                        </div>
-                                                        <span class="text-base font-medium leading-tight">${opt}</span>
-                                                    </div>
-                                                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
-                                                        ${isSel ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100">আপনার উত্তর</span>' : ''}
-                                                        ${isRight ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">সঠিক</span>' : ''}
-                                                    </div>
-                                                </div>`;
-                                            }).join('')}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
-            }
-
-            // 2. RESULT MODE
-            if (isFinished) {
-                const pct = Math.round((score / questions.length) * 100);
-                let msg = pct >= 80 ? "মাশাআল্লাহ! দুর্দান্ত হয়েছে。" : (pct >= 50 ? "ভালো হয়েছে, তবে আরও ভালো করা সম্ভব。" : "দুঃখিত! আরও মনোযোগ দিয়ে ক্লাসটি করুন।");
-                let icon = pct >= 80 ? "trophy" : (pct >= 50 ? "thumbs-up" : "book-open");
-                let color = pct >= 80 ? "text-yellow-500" : (pct >= 50 ? "text-emerald-500" : "text-slate-400");
-                return `
-                <div class="min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in relative overflow-hidden bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                    <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"><div class="absolute top-10 left-10 w-32 h-32 bg-emerald-500 rounded-full blur-3xl"></div><div class="absolute bottom-10 right-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl"></div></div>
-                    <div class="max-w-lg w-full border backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 text-center relative z-10 bg-white/90 border-white dark:bg-slate-800/80 dark:border-slate-700">
-                        <div class="mb-6 pb-6 border-b border-gray-200 dark:border-slate-600">
-                            <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">${userName}</h3><p class="text-sm opacity-70">পিতা/স্বামী: <span class="font-medium">${userGuardian}</span></p>
-                        </div>
-                        <div class="relative inline-block mb-6"><div class="absolute inset-0 bg-current opacity-20 rounded-full animate-ping ${color}"></div><div class="w-24 h-24 rounded-full flex items-center justify-center shadow-inner relative z-10 bg-slate-50 dark:bg-slate-700"><i data-lucide="${icon}" class="w-10 h-10 ${color}"></i></div></div>
-                        <h2 class="text-xl font-bold opacity-60 uppercase tracking-widest mb-2">${TEXTS.yourScore}</h2>
-                        <div class="flex items-baseline justify-center gap-1 mb-6"><span class="text-7xl font-black ${color}">${score}</span><span class="text-3xl font-bold opacity-30">/ ${questions.length}</span></div>
-                        <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-8 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ease-out ${pct >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-rose-400 to-rose-600'}" style="width: ${pct}%"></div></div>
-                        <div class="p-4 rounded-xl mb-8 bg-slate-100 dark:bg-slate-700/50"><p class="text-lg font-medium leading-relaxed">"${msg}"</p></div>
-                        <div class="flex flex-col gap-3 w-full mt-6">
-                            <button onclick="actions.goHome()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"><i data-lucide="home" class="w-5 h-5"></i> ${TEXTS.goHome}</button>
-                        </div>
-                    </div>
-                </div>`;
-            }
-
-            // 3. ACTIVE QUIZ MODE
-            return `
-            <div class="min-h-screen flex flex-col animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                <div class="px-2 py-3 md:px-6 border-b flex items-center justify-between sticky top-0 z-20 shadow-sm transition-all border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-                    <div class="w-10 md:w-20 shrink-0"><button onclick="actions.exitQuiz()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center"><i data-lucide="arrow-left" class="w-6 h-6"></i></button></div>
-                    <div class="flex-1 flex items-center justify-center gap-6 md:gap-16">
-                        <div class="flex items-center gap-2 shrink-0"><span class="text-xs md:text-sm font-bold opacity-60 hidden sm:block">অগ্রগতি:</span><div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-sm md:text-base font-bold text-emerald-600 dark:text-emerald-400">${toBanglaDigit(Object.keys(userAnswers).length)}<span class="opacity-40 text-xs mx-0.5">/</span>${toBanglaDigit(questions.length)}</span></div></div>
-                        ${!state.quiz.isPractice ? `<div class="flex items-center justify-center min-w-[120px] md:min-w-[150px] gap-2 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-900/30"><i data-lucide="timer" class="w-4 h-4 text-red-500 animate-pulse"></i><span class="text-lg md:text-xl font-black text-red-600 dark:text-red-400 font-mono tracking-wider" id="quiz-timer">${formatTime(timeLeft)}</span></div>` : ''}
-                        <button onclick="actions.submitAllAnswers()" class="shrink-0 px-3 py-1.5 md:px-5 md:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold shadow-lg disabled:opacity-50 disabled:grayscale transition-all transform active:scale-95 whitespace-nowrap flex items-center justify-center gap-2" ${Object.keys(userAnswers).length === 0 ? 'disabled' : ''}><span class="hidden sm:inline">জমা দিন</span> <span class="sm:hidden">জমা</span> <i data-lucide="send" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button>
-                    </div>
-                    <div class="w-10 md:w-20 shrink-0"></div> 
-                </div>
-                <div class="flex-1 p-4 md:p-8 max-w-3xl mx-auto w-full space-y-12 pb-20">
-                    <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-lg p-3 flex items-center justify-center gap-2 text-sm text-emerald-800 dark:text-emerald-200 mb-6"><i data-lucide="user" class="w-4 h-4 opacity-50"></i><span>পরীক্ষার্থী: <span class="font-bold">${userName}</span></span> ${state.quiz.isPractice ? '<span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">অনুশীলন</span>' : ''}</div>
-                    ${questions.map((q, qIdx) => {
-                        const isMultiple = q.correctIndices.length > 1;
-                        const uAns = userAnswers[qIdx] || [];
-                        return `
-                        <div class="animate-fade-in" style="animation-delay: ${qIdx * 0.05}s">
-                            <div class="flex items-start gap-4 mb-6"><span class="flex items-center justify-center shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-sm shadow-md">${toBanglaDigit(qIdx + 1)}</span><div class="space-y-1"><h3 class="text-xl font-bold leading-relaxed">${q.question}</h3></div></div>
-                            <div class="grid grid-cols-1 gap-3 pl-0 md:pl-12">
-                                ${q.options.map((option, optIdx) => {
-                                    const isSelected = uAns.includes(optIdx);
-                                    let badgeClass = isSelected ? 'bg-emerald-600 text-white dark:bg-emerald-500' : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-slate-600 dark:group-hover:text-white';
-                                    let marker = isSelected ? SVGS.checkSquare : SVGS.square;
-                                    
-                                    return `<button type="button" onclick="actions.toggleQuizOption(${qIdx}, ${optIdx})" class="w-full p-3 md:p-4 rounded-xl border-2 text-left font-medium transition-all duration-200 flex items-center justify-between group ${getOptionClass(isSelected, false, false)}"><div class="flex items-center gap-3"><div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${badgeClass}">${banglaIndices[optIdx] || (optIdx + 1)}</div><span class="text-base ${isSelected ? 'text-emerald-800 dark:text-emerald-100 font-bold' : ''}">${option}</span></div><div class="shrink-0 pl-2">${marker}</div></button>`;
-                                }).join('')}
-                            </div>
-                        </div>`;
-                    }).join('<div class="w-full h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent my-10"></div>')}
-                </div>
-            </div>`;
-        };
-
-        const renderLeaderboard = () => {
-            const data = state.leaderboardData;
-            // Filter logic if needed (e.g., if we are showing a specific quiz leaderboard)
-            const filteredData = state.leaderboardFilter 
-                ? data.filter(d => d.quizId === state.leaderboardFilter) 
-                : data.filter(d => d.quizId === "সীরাত" || !d.quizId); // Default to live/seerat if not filtered
-
-            // If we are filtering, we might want to show a title for it
-            const lbTitle = state.leaderboardFilter ? `মেধাতালিকা: ${state.leaderboardTitle || state.leaderboardFilter}` : TEXTS.leaderboardTitle;
-
-            return `
-            <div class="min-h-screen flex flex-col animate-fade-in bg-stone-50 text-stone-900 dark:bg-slate-900 dark:text-white">
-                <div class="p-4 md:px-8 border-b flex items-center justify-between sticky top-0 z-30 shadow-sm backdrop-blur-md border-stone-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
-                    <button onclick="actions.leaderboardBack()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 bg-gray-100 dark:bg-slate-700 border border-stone-200 dark:border-slate-600 shadow-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="font-bold hidden md:inline">ফিরে যান</span></button>
-                    <div class="font-bold text-lg flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i> ${lbTitle}</div><div class="w-10"></div> 
-                </div>
-                <div class="container mx-auto p-4 md:p-8 max-w-4xl mt-4">
-                    <div class="rounded-2xl overflow-hidden border shadow-lg border-stone-200 dark:border-slate-700">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead><tr class="uppercase text-base font-bold tracking-wider bg-emerald-600 text-white dark:bg-slate-800 dark:text-emerald-400"><th class="p-4 w-20 text-center">মেধাস্থান</th><th class="p-4 text-center">${TEXTS.name}</th><th class="p-4 text-center">${TEXTS.score}</th><th class="p-4 text-center">${TEXTS.timeTaken}</th><th class="p-4 text-center">${TEXTS.submissionSerial}</th><th class="p-4 text-center hidden sm:table-cell">${TEXTS.time}</th></tr></thead>
-                                <tbody>
-                                    ${filteredData.length > 0 ? filteredData.map((user, idx) => {
-                                        let rankDisplay = `<span class="font-bold opacity-50 text-xl">${toBanglaDigit(idx + 1)}</span>`;
-                                        if (idx === 0) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="crown" class="w-8 h-8 text-yellow-500 fill-yellow-500 animate-bounce"></i><span class="text-[10px] font-bold text-yellow-600 uppercase">১ম</span></div>`;
-                                        else if (idx === 1) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-slate-400 fill-slate-300"></i><span class="text-[10px] font-bold text-slate-500 uppercase">২য়</span></div>`;
-                                        else if (idx === 2) rankDisplay = `<div class="flex flex-col items-center"><i data-lucide="medal" class="w-7 h-7 text-amber-700 fill-amber-600"></i><span class="text-[10px] font-bold text-amber-800 uppercase">৩য়</span></div>`;
-                                        else if (idx === 3) rankDisplay = `<div class="flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg border-2 border-blue-200">৪</div><span class="text-[10px] font-bold text-blue-600 uppercase">৪র্থ</span></div>`;
-                                        else if (idx === 4) rankDisplay = `<div class="flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-lg border-2 border-purple-200">৫</div><span class="text-[10px] font-bold text-purple-600 uppercase">৫ম</span></div>`;
-                                        
-                                        let rowClass = `border-b last:border-0 border-gray-200 dark:border-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900/50' : 'bg-gray-50 dark:bg-slate-800/50'}`;
-                                        if (idx === 0) rowClass += " bg-yellow-50/50 dark:bg-yellow-900/10";
-                                        else if (idx === 1) rowClass += " bg-slate-50/50 dark:bg-slate-900/20";
-                                        else if (idx === 2) rowClass += " bg-amber-50/50 dark:bg-amber-900/10";
-                                        else if (idx === 3) rowClass += " bg-blue-50/30 dark:bg-blue-900/10";
-                                        else if (idx === 4) rowClass += " bg-purple-50/30 dark:bg-purple-900/10";
-
-                                        const dateObj = new Date(user.timestamp);
-                                        return `<tr class="${rowClass}"><td class="p-4 text-center align-middle">${rankDisplay}</td><td class="p-4 align-middle"><div class="font-bold text-base md:text-lg">${user.name}</div><div class="text-xs opacity-60">${user.guardian || '-'}</div></td><td class="p-4 text-center align-middle"><span class="inline-block px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-extrabold text-2xl shadow-sm">${toBanglaDigit(user.score)}</span></td><td class="p-4 text-center align-middle font-medium text-emerald-600">${user.timeTaken ? `${toBanglaDigit(Math.floor(user.timeTaken/60))} মি ${toBanglaDigit(user.timeTaken%60)} সে` : '-'}</td><td class="p-4 text-center align-middle"><span class="font-bold text-base md:text-lg opacity-70">${toBanglaDigit(user.submissionSerial || '-')}</span></td><td class="p-4 text-center align-middle hidden sm:table-cell"><div class="flex flex-col items-center text-stone-700 dark:text-stone-200"><span class="font-medium text-base">${dateObj.toLocaleString('bn-BD', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-')}</span><span class="text-sm font-medium opacity-90">${dateObj.toLocaleString('bn-BD', {hour:'numeric',minute:'numeric',second:'numeric',hour12:true})}</span></div></td></tr>`;
-                                    }).join('') : `<tr><td colspan="6" class="p-10 text-center opacity-50">এখনো কোনো ফলাফল জমা পড়েনি।</td></tr>`}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        };
-
-        const actions = {
-            toggleTheme: () => { state.darkMode = !state.darkMode; render(); },
-            goHome: () => { if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval); state.view = 'home'; state.selectedLecture = null; render(); },
-            setFilter: (cat) => { state.filter = cat; render(); },
-            setSearch: (val) => { state.search = val; if (state.view === 'home') render(); },
-            selectLecture: (id) => { state.selectedLecture = COURSE_DATA.find(l => l.id === id); state.view = 'detail'; state.playbackRate = 1.0; window.scrollTo(0, 0); render(); },
-            startQuiz: async () => {
-                // Ensure ALL_QUIZZES contains "Live" data
-                if (CURRENT_LOADED_SHEET !== "Live" || ALL_QUIZZES.length === 0) { 
-                    const data = await fetchQuizData("Live"); 
-                    if (!data || data.length === 0) { alert("কুইজ লোড করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।"); return; } 
-                }
-                const saved = getSavedQuizState(); if (saved) { actions.resumeQuiz(); return; }
-                state.quiz = { active: true, currentQuestion: 0, score: 0, selectedOption: null, selectedOptions: [], isAnswerChecked: false, isFinished: false, isReviewing: false, questions: [...ALL_QUIZZES], userAnswers: {}, userName: "", userGuardian: "", startTime: null, endTime: null, expiryTime: null, timerInterval: null, timeLeft: QUIZ_TIME_LIMIT, isPractice: false };
-                state.view = (QUIZ_PASSWORD && QUIZ_PASSWORD !== "") ? 'quiz_password' : 'quiz_registration'; render(); window.scrollTo(0, 0);
-            },
-            // New Action for Practice Mode
-            startPractice: async (sheetName) => {
-                const questions = await fetchQuizData(sheetName);
-                if (!questions || questions.length === 0) { alert("অনুশীলন কুইজ লোড করা যায়নি। সম্ভবত এই কুইজটি এখনো তৈরি হয়নি।"); return; }
-                
-                state.quiz = { 
-                    active: true, 
-                    currentQuestion: 0, 
-                    score: 0, 
-                    selectedOption: null, 
-                    selectedOptions: [], 
-                    isAnswerChecked: false, 
-                    isFinished: false, 
-                    isReviewing: false, 
-                    questions: [...questions], 
-                    userAnswers: {}, 
-                    userName: "অনুশীলনকারী", 
-                    userGuardian: "-", 
-                    startTime: Date.now(), 
-                    endTime: null, 
-                    expiryTime: null, 
-                    timerInterval: null, 
-                    timeLeft: 0, // No timer for practice usually, or handled differently
-                    isPractice: true 
-                };
-                
-                // For practice, skip password check and go to registration (for name) or direct start
-                state.view = 'quiz_registration'; 
-                render(); 
-                window.scrollTo(0, 0);
-            },
-            viewArchiveLeaderboard: async (quizId, title) => {
-                 state.leaderboardFilter = quizId;
-                 state.leaderboardTitle = title;
-                 state.view = 'leaderboard';
-                 actions.fetchLeaderboardData();
-                 render();
-                 window.scrollTo(0, 0);
-            },
-            viewArchiveAnswerKey: async (sheetName) => {
-                const questions = await fetchQuizData(sheetName);
-                if (!questions || questions.length === 0) { alert("উত্তরপত্র লোড করা যায়নি।"); return; }
-                state.quiz = { 
-                    active: false, isFinished: false, isReviewing: true, fromHome: false, // Opened from archive
-                    questions: [...questions], userAnswers: {}, userName: "", userGuardian: "", score: 0,
-                    isPractice: true // Treat as practice mode context
-                };
-                state.view = 'quiz';
-                render();
-                window.scrollTo(0, 0);
-            },
-            verifyPassword: () => {
-                const input = document.getElementById('quiz-pass-input');
-                if (input.value.trim() === QUIZ_PASSWORD) { state.view = 'quiz_registration'; render(); window.scrollTo(0, 0); } 
-                else { document.getElementById('pass-error-msg').classList.remove('hidden'); input.classList.add('border-rose-500', 'ring-1', 'ring-rose-500'); setTimeout(() => input.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500'), 2000); }
-            },
-            togglePasswordVisibility: () => {
-                const input = document.getElementById('quiz-pass-input');
-                const btn = document.getElementById('pass-toggle-btn');
-                if (input && btn) {
-                    const isPassword = input.type === 'password';
-                    input.type = isPassword ? 'text' : 'password';
-                    btn.innerHTML = isPassword ? SVGS.eyeOff : SVGS.eye;
-                }
-            },
-            submitRegistration: () => {
-                const name = document.getElementById('reg-name').value.trim(), guardian = document.getElementById('reg-guardian').value.trim();
-                
-                if (!name || (!state.quiz.isPractice && !guardian)) { 
-                    alert(state.quiz.isPractice ? "দয়া করে আপনার নাম দিন।" : "দয়া করে উভয় ঘর পূরণ করুন।"); 
-                    return; 
-                }
-                
-                state.quiz.userName = name; 
-                state.quiz.userGuardian = guardian || "-"; 
-                // state.quiz.questions is already set in startQuiz or startPractice
-                
-                state.quiz.startTime = Date.now(); 
-                
-                // Expiry Logic: Only if NOT practice and there is a limit
-                if (!state.quiz.isPractice) {
-                    if (QUIZ_TIME_LIMIT > 0) {
-                        state.quiz.expiryTime = Date.now() + (QUIZ_TIME_LIMIT * 1000);
-                    } else if (GLOBAL_END_TIME) {
-                        state.quiz.expiryTime = GLOBAL_END_TIME;
-                    } else {
-                        state.quiz.expiryTime = Date.now() + (3600 * 1000);
-                    }
-                    localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz)); 
-                    actions.startTimerLoop();
-                }
-
-                state.view = 'quiz'; 
-                render(); 
-                window.scrollTo(0, 0);
-            },
-            startTimerLoop: () => {
-                if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
-                const update = () => {
-                    const diff = Math.ceil((state.quiz.expiryTime - Date.now()) / 1000);
-                    if (diff <= 0) { state.quiz.timeLeft = 0; clearInterval(state.quiz.timerInterval); actions.submitAllAnswers(); } else { state.quiz.timeLeft = diff; const el = document.getElementById('quiz-timer'); if (el) el.innerText = formatTime(state.quiz.timeLeft); }
-                };
-                update(); state.quiz.timerInterval = setInterval(update, 1000);
-            },
-            resumeQuiz: () => {
-                const saved = getSavedQuizState();
-                if (!saved) { alert("সংরক্ষিত কুইজ পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।"); state.view = 'home'; render(); return; }
-                state.quiz = saved; actions.startTimerLoop(); state.view = 'quiz'; render(); window.scrollTo(0, 0);
-            },
-            toggleQuizOption: (qIdx, optIdx) => {
-                const current = state.quiz.userAnswers[qIdx] || [];
-                // Allow multiple selection (toggle)
-                if (current.includes(optIdx)) {
-                    state.quiz.userAnswers[qIdx] = current.filter(i => i !== optIdx);
-                } else {
-                    state.quiz.userAnswers[qIdx] = [...current, optIdx];
-                }
-                if (state.quiz.userAnswers[qIdx].length === 0) delete state.quiz.userAnswers[qIdx];
-                if (!state.quiz.isPractice) localStorage.setItem('seerat_quiz_state', JSON.stringify(state.quiz)); 
-                render();
-            },
-            submitAllAnswers: () => {
-                if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval);
-                state.quiz.endTime = Date.now();
-                let score = 0;
-                state.quiz.questions.forEach((q, idx) => {
-                    // Universal Scoring: Sort and Compare
-                    const uAns = (state.quiz.userAnswers[idx] || []).slice().sort((a, b) => a - b);
-                    const cAns = q.correctIndices.slice().sort((a, b) => a - b);
-                    if (JSON.stringify(uAns) === JSON.stringify(cAns)) score++;
-                });
-                state.quiz.score = score; state.quiz.isFinished = true; state.quiz.isReviewing = false;
-                localStorage.removeItem('seerat_quiz_state');
-                
-                // SAVE RESULT FOR REVIEW
-                if(!state.quiz.isPractice) localStorage.setItem('seerat_last_result', JSON.stringify(state.quiz));
-
-                // ONLY SAVE TO FIREBASE IF NOT PRACTICE
-                if (currentUser && !state.quiz.isPractice) {
-                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), { 
-                        name: state.quiz.userName, 
-                        guardian: state.quiz.userGuardian, 
-                        score, 
-                        totalQuestions: state.quiz.questions.length, 
-                        timestamp: Date.now(), 
-                        timeTaken: Math.floor((state.quiz.endTime - state.quiz.startTime) / 1000),
-                        quizId: QUIZ_NAME_FROM_SHEET // Save the ID from the sheet so we can filter later
-                    }).catch(e => console.error(e));
-                }
-                window.scrollTo(0, 0); render();
-            },
-            reviewQuizAnswers: () => { state.quiz.isReviewing = true; window.scrollTo(0, 0); render(); },
-            exitReview: () => { 
-                if (state.quiz.fromHome) {
-                    actions.goHome();
-                } else if (state.selectedLecture) {
-                    // Return to lecture detail if we were in archive mode
-                     state.view = 'detail';
-                     state.quiz.isReviewing = false;
-                     render();
-                } else if (state.quiz.isFinished) {
-                    state.quiz.isReviewing = false; 
-                    window.scrollTo(0, 0); 
-                    render();
-                } else {
-                    actions.goHome(); 
-                }
-            },
-            exitQuiz: () => { if (state.quiz.timerInterval) clearInterval(state.quiz.timerInterval); state.view = state.selectedLecture ? 'detail' : 'home'; render(); },
-            // --- UPDATED ACTIONS: Check time restriction ---
-            viewLeaderboard: () => { 
-                // Only restrict MAIN GLOBAL leaderboard. Archive leaderboards are always open.
-                if (!state.leaderboardFilter && GLOBAL_END_TIME && Date.now() < GLOBAL_END_TIME) {
-                    state.showWaitModal = true;
-                    render();
-                } else {
-                    state.view = 'leaderboard'; 
-                    actions.fetchLeaderboardData(); 
-                    render(); 
-                    window.scrollTo(0, 0); 
-                }
-            },
-            viewAnswerKey: async () => {
-                // Only restrict MAIN GLOBAL answer key.
-                if (GLOBAL_END_TIME && Date.now() < GLOBAL_END_TIME) {
-                    state.showWaitModal = true;
-                    render();
-                    return;
-                }
-
-                const lastResult = localStorage.getItem('seerat_last_result');
-                if (lastResult) {
-                    state.quiz = JSON.parse(lastResult);
-                    state.quiz.isReviewing = true;
-                    state.quiz.fromHome = true; // Mark as opened from home
-                    state.view = 'quiz';
-                    render();
-                    window.scrollTo(0, 0);
-                } else {
-                    if (ALL_QUIZZES.length === 0) { await fetchQuizData("Live"); }
-                    // Reset quiz state for viewing blank key
-                    state.quiz = { 
-                        active: false, 
-                        currentQuestion: 0, 
-                        score: 0, 
-                        selectedOption: null, 
-                        selectedOptions: [], 
-                        isAnswerChecked: false, 
-                        isFinished: false, 
-                        isReviewing: true, 
-                        fromHome: true, // Mark as opened from home
-                        questions: [...ALL_QUIZZES], 
-                        userAnswers: {}, 
-                        userName: "", 
-                        userGuardian: "", 
-                        startTime: null, 
-                        endTime: null, 
-                        expiryTime: null, 
-                        timerInterval: null, 
-                        timeLeft: 0 
-                    };
-                    state.view = 'quiz';
-                    render();
-                    window.scrollTo(0, 0);
-                }
-            },
-            closeWaitModal: () => {
-                state.showWaitModal = false;
-                render();
-            },
-            leaderboardBack: () => { 
-                if (state.leaderboardFilter) {
-                     // Go back to lecture detail if filtered
-                     state.view = 'detail';
-                     state.leaderboardFilter = null;
-                     state.leaderboardTitle = null;
-                } else {
-                     state.view = state.quiz.isFinished ? 'quiz' : 'home'; 
-                }
-                render(); 
-            },
-            fetchLeaderboardData: () => {
-                if (!currentUser) return;
-                if (unsubscribeLeaderboard) unsubscribeLeaderboard();
-                unsubscribeLeaderboard = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), (snapshot) => {
-                    let data = []; snapshot.forEach(d => data.push(d.data()));
-                    
-                    // 1. Sort by timestamp first to determine the submission serial (Chronological Order)
-                    data.sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    // 2. Assign serials based on submission order within their specific quiz ID groups
-                    const serialCounters = {};
-                    data = data.map(item => {
-                        // Normalize quizId if missing to group correctly
-                        const qId = item.quizId || "সীরাত"; 
-                        if (!serialCounters[qId]) serialCounters[qId] = 0;
-                        serialCounters[qId]++;
-                        // Return new object with calculated serial
-                        return { ...item, submissionSerial: serialCounters[qId] };
-                    });
-                    
-                    // 3. Sort by Score (Desc) then Time Taken (Asc) for the actual Leaderboard Ranking
-                    data.sort((a, b) => {
-                        if (b.score !== a.score) {
-                            return b.score - a.score;
-                        }
-                        return (a.timeTaken || 0) - (b.timeTaken || 0);
-                    });
-
-                    state.leaderboardData = data;
-                    if (state.view === 'leaderboard') render();
-                });
-            },
-            togglePasswordVisibility: () => {
-                const input = document.getElementById('quiz-pass-input');
-                const btn = document.getElementById('pass-toggle-btn');
-                if (input && btn) {
-                    const isPassword = input.type === 'password';
-                    input.type = isPassword ? 'text' : 'password';
-                    btn.innerHTML = isPassword ? SVGS.eyeOff : SVGS.eye;
-                }
-            },
-            showAlert: (msg) => {
-                state.alert = { show: true, message: msg };
-                render();
-            },
-            closeAlert: () => {
-                state.alert.show = false;
-                render();
-            }
-        };
-
-        window.actions = actions;
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) state.darkMode = true;
-        render();
+        // --- UTILS ---
+        function toBanglaNum(n) {
+            return n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+        }
     </script>
 </body>
 </html>

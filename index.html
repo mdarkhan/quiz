@@ -7,859 +7,850 @@
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for Checkboxes/Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         :root {
-            /* Authentic Islamic Green Palette */
-            --primary-dark: #145A32;    /* Deep Forest Green */
-            --primary-light: #27AE60;   /* Fresh Green */
-            --accent-gold: #F1C40F;     /* Bright Gold */
-            --text-white: #FFFFFF;
-            --text-dark: #0B5345;
+            --primary-green: #009045;
+            --light-green-bg: #E6F4EA;
+            --bg-color: #F9FAFB;
+            --text-color: #1F2937;
+            --card-bg: #FFFFFF;
+            --border-color: #E5E7EB;
+            --option-label-bg: #F3F4F6;
             
-            --correct-color: #2E7D32;
-            --wrong-color: #C0392B;
-
-            --glass-bg: #FFFFFF;
-            --shadow-soft: 0 10px 30px rgba(20, 90, 50, 0.1);
+            --correct-bg: #D1FAE5;
+            --correct-border: #34D399;
+            --wrong-bg: #FEE2E2;
+            --wrong-border: #F87171;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Noto Sans Bengali', sans-serif;
-            background-color: #F4F8F5; 
-            color: var(--text-dark);
+            background-color: var(--bg-color); 
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding-bottom: 40px;
         }
 
-        /* --- STICKY TIMER --- */
-        #sticky-timer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: var(--primary-dark);
-            color: var(--accent-gold);
-            text-align: center;
-            padding: 12px;
-            font-weight: 700;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 1.3rem;
-            letter-spacing: 1px;
-        }
-        #sticky-timer.active { transform: translateY(0); }
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- HEADER --- */
+        /* --- HOME SCREEN --- */
+        #screen-home {
+            width: 95%;
+            max-width: 500px;
+            margin-top: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
         header {
-            width: 100%;
-            background: linear-gradient(180deg, var(--primary-dark) 0%, #1E8449 100%);
-            color: white;
             text-align: center;
-            padding: 2.5rem 1rem 4rem 1rem;
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
-            box-shadow: 0 4px 20px rgba(20, 90, 50, 0.2);
-            position: relative;
-            transition: all 0.5s ease;
-        }
-
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 10px;
-            background: var(--accent-gold);
-            opacity: 0.7;
+            margin-bottom: 2rem;
         }
 
         .bismillah {
             font-family: 'Amiri', serif;
-            font-size: 1.8rem;
-            color: var(--accent-gold);
+            font-size: 1.5rem;
+            color: var(--primary-green);
             display: block;
             margin-bottom: 0.5rem;
-            text-shadow: 0 2px 2px rgba(0,0,0,0.2);
         }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
+        h1 { font-size: 2rem; color: #111827; font-weight: 700; }
 
-        .subtitle {
-            font-size: 1rem;
-            opacity: 0.95;
-            background: rgba(255,255,255,0.15);
-            padding: 5px 15px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-
-        /* --- MAIN CONTAINER --- */
-        main {
-            width: 95%;
-            max-width: 600px;
-            margin-top: -3rem; /* Overlap header */
-            z-index: 10;
-            padding-bottom: 3rem;
-            transition: margin-top 0.5s ease;
-        }
-        
-        main.no-header {
-            margin-top: 2rem;
-        }
-
-        .card {
-            background: var(--glass-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: var(--shadow-soft);
-            display: none;
-            animation: fadeIn 0.4s ease-out;
-            border-top: 4px solid var(--primary-light);
-        }
-        .card.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- FORM ELEMENTS --- */
-        .section-title {
-            color: var(--primary-dark);
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #E9F7EF;
-            padding-bottom: 5px;
+        .section-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.8rem;
             margin-top: 1.5rem;
+            display: block;
         }
-        .section-title:first-child { margin-top: 0; }
 
-        .grid-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 10px;
+        .input-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: 0.2s;
         }
+        .input-box:focus { outline: none; border-color: var(--primary-green); }
+
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        /* Three column grid for sheets if needed, or flex wrap */
-        .sheet-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .mode-select input { display: none; }
-        .mode-select label {
+        .select-card input { display: none; }
+        .select-card label {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: white;
-            border: 2px solid #E9F7EF;
-            border-radius: 12px;
             padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
             cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
+            transition: all 0.2s;
+            background: white;
+            color: #6B7280;
             height: 100%;
-            color: #555;
-            flex: 1;
-            min-width: 80px;
         }
-
-        .mode-select input:checked + label {
-            border-color: var(--primary-light);
-            background: #E9F7EF;
-            color: var(--primary-dark);
+        .select-card input:checked + label {
+            border-color: var(--primary-green);
+            background: #F0FDF4;
+            color: var(--primary-green);
             font-weight: 600;
-            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.15);
+            box-shadow: 0 2px 4px rgba(0, 144, 69, 0.1);
         }
 
-        .mode-icon {
-            font-size: 1.4rem;
-            margin-bottom: 6px;
-            color: var(--primary-light);
-        }
-
-        /* --- TIMER INPUT --- */
-        .timer-config {
-            background: #F4F8F5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-            border: 1px dashed var(--primary-light);
-        }
-        .timer-config.show { display: block; }
-        
-        .timer-input {
+        /* --- 3D BUTTON EFFECT --- */
+        .btn-primary {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #D5D8DC;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-dark);
-        }
-        .timer-input:focus { outline: none; border-color: var(--primary-light); }
-
-        /* --- BUTTONS --- */
-        .btn {
-            width: 100%;
-            padding: 1rem;
+            padding: 14px;
+            background: var(--primary-green);
+            color: white;
             border: none;
             border-radius: 8px;
             font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            
+            /* 3D Properties */
+            box-shadow: 0 4px 0 #006832, 0 5px 10px rgba(0,0,0,0.1);
+            transition: all 0.15s ease;
+            transform: translateY(0);
+        }
+        
+        .btn-primary:hover { 
+            background: #00803D; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #006832, 0 8px 15px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary:active { 
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #006832, 0 0 0 rgba(0,0,0,0); 
+        }
+        
+        .btn-primary:disabled { 
+            background: #9CA3AF; 
+            cursor: not-allowed; 
+            box-shadow: none; 
+            transform: none; 
+        }
+
+        /* --- QUIZ SCREEN --- */
+        #screen-quiz {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        /* Sticky Top Bar Layout */
+        .quiz-top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 10px 15px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; /* Left, Center, Right */
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 0;
+            height: 60px;
+        }
+
+        /* Left: Progress */
+        .top-left { justify-self: start; }
+        .progress-badge {
+            background: #F3F4F6;
+            color: var(--primary-green);
+            padding: 6px 12px;
+            border-radius: 20px;
             font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid #E5E7EB;
+        }
+
+        /* Center: Timer */
+        .top-center { justify-self: center; }
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #B45309; /* Dark Orange/Gold */
+            background: #FEF3C7;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #FDE68A;
+            display: none; /* Hidden by default */
+        }
+        .timer-display.active { display: block; }
+
+        /* Right: Finish Button */
+        .top-right { justify-self: end; }
+        .btn-finish-quiz {
+            background: white;
+            color: #EF4444; /* Red */
+            border: 1px solid #FECACA;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: 0.2s;
-            background: var(--primary-dark);
-            color: white;
-            margin-top: 20px;
         }
-        .btn:hover { background: #0E4526; }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { background: #95A5A6; cursor: not-allowed; }
+        .btn-finish-quiz:hover { background: #FEF2F2; border-color: #EF4444; }
 
-        .btn-outline {
-            background: white;
-            border: 2px solid var(--primary-dark);
-            color: var(--primary-dark);
+        /* User Info Bar */
+        .user-info-bar {
+            background: var(--light-green-bg);
+            border: 1px solid #D1FAE5;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 15px 25px 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            color: #065F46;
+            font-weight: 500;
+            font-size: 0.95rem;
         }
-        .btn-outline:hover { background: #E9F7EF; }
-
-        /* --- QUIZ UI --- */
-        .q-number {
-            font-size: 0.9rem;
-            color: #7DCEA0;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .q-text {
-            font-size: 1.4rem;
+        .mode-badge {
+            background: #DBEAFE;
+            color: #1E40AF;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
             font-weight: 600;
-            color: #1B2631;
-            margin-bottom: 1.5rem;
+        }
+
+        /* Question Area */
+        .question-container {
+            padding: 0 15px;
+            padding-bottom: 30px;
+        }
+
+        .q-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .q-num-circle {
+            background: var(--primary-green);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .q-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
             line-height: 1.5;
         }
 
-        .option-group { display: flex; flex-direction: column; gap: 10px; }
-        
-        .option-btn {
-            position: relative;
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-card {
             background: white;
-            border: 1px solid #D5D8DC;
-            border-radius: 8px;
-            padding: 14px 18px;
-            text-align: left;
-            font-size: 1.05rem;
-            cursor: pointer;
-            transition: 0.2s;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
             align-items: center;
-            color: #34495E;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         
-        .option-btn:hover { background: #FDFEFE; border-color: var(--primary-light); }
+        .option-card:hover {
+            border-color: #D1D5DB;
+            background: #F9FAFB;
+        }
+
+        .option-card.selected {
+            border-color: var(--primary-green);
+            background: #F0FDF4; 
+        }
         
-        .option-btn.selected {
-            background: #E9F7EF;
-            border-color: var(--primary-dark);
-            color: var(--primary-dark);
+        .option-card.correct-answer {
+            background: #ECFDF5;
+            border-color: var(--primary-green);
+        }
+        .option-card.wrong-answer {
+            background: #FEF2F2;
+            border-color: #EF4444;
+        }
+
+        .option-label-box {
+            width: 36px;
+            height: 36px;
+            background: var(--option-label-bg);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-weight: 600;
-        }
-        
-        .option-circle {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #BDC3C7;
-            border-radius: 50%;
-            margin-right: 15px;
+            color: #4B5563;
             flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .option-text {
+            flex-grow: 1;
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .option-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #D1D5DB;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
             color: white;
+            transition: 0.2s;
         }
         
-        .option-btn.selected .option-circle {
-            border-color: var(--primary-dark);
-            background: var(--primary-dark);
+        .option-card.selected .option-checkbox {
+            background: var(--primary-green);
+            border-color: var(--primary-green);
         }
 
-        /* Multiple Choice Square */
-        .option-btn.multi .option-circle { border-radius: 4px; }
-
-        /* Feedback Colors */
-        .option-btn.correct { background: #D4EFDF; border-color: var(--correct-color); color: var(--correct-color); }
-        .option-btn.correct .option-circle { background: var(--correct-color); border-color: var(--correct-color); content: '✓'; }
-        
-        .option-btn.wrong { background: #FADBD8; border-color: var(--wrong-color); color: var(--wrong-color); }
-        .option-btn.wrong .option-circle { background: var(--wrong-color); border-color: var(--wrong-color); }
-
-        .explanation {
-            background: #FEF9E7;
-            border-left: 4px solid var(--accent-gold);
-            padding: 15px;
-            border-radius: 6px;
+        .explanation-box {
             margin-top: 20px;
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            border-radius: 8px;
+            padding: 15px;
             display: none;
-            color: #7F6000;
+            animation: fadeIn 0.3s;
         }
 
-        /* --- RESULTS --- */
-        .result-score {
-            width: 140px;
-            height: 140px;
+        /* Footer Actions (Next/Submit Button) */
+        .quiz-footer-actions {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Result Screen */
+        #screen-result {
+            padding: 20px;
+            text-align: center;
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background: white;
-            border: 6px solid var(--primary-light);
+            border: 8px solid var(--primary-green);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             margin: 0 auto 20px auto;
         }
-        .score-val { font-size: 2.8rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
-        .score-max { font-size: 1.1rem; color: #7F8C8D; }
-        
-        .review-card {
-            background: white;
-            border-bottom: 1px solid #ECF0F1;
-            padding: 15px 0;
-        }
-        
-        footer { margin-top: auto; padding: 20px; color: #95A5A6; font-size: 0.8rem; }
-        
-        /* Loading Overlay */
+
+        /* Loader */
         #loading-overlay {
             position: fixed;
             top:0; left:0; width:100%; height:100%;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             z-index: 2000;
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            color: var(--primary-dark);
-            font-weight: 600;
         }
 
-        @media(max-width:600px) {
-            h1 { font-size: 2rem; }
-            .grid-options { grid-template-columns: 1fr; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #E5E7EB;
+            border-top: 4px solid var(--primary-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Sticky Timer -->
-    <div id="sticky-timer">
-        <span>সময় বাকি:</span>
-        <span id="timer-val">00:00</span>
-    </div>
-
     <!-- Loading -->
     <div id="loading-overlay">
-        <div style="font-size:2rem; margin-bottom:10px;">⌛</div>
-        <span>প্রশ্ন লোড হচ্ছে...</span>
+        <div class="spinner"></div>
+        <span style="font-weight:600; color:#374151;">লোড হচ্ছে...</span>
     </div>
 
-    <!-- Header -->
-    <header id="main-header">
-        <span class="bismillah">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</span>
-        <h1>ইসলামিক কুইজ</h1>
-        <span class="subtitle">জ্ঞানই আলো, অজ্ঞতা অন্ধকার</span>
-    </header>
+    <!-- HOME SCREEN -->
+    <main id="screen-home" class="fade-in">
+        <header>
+            <span class="bismillah">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</span>
+            <h1>ইসলামিক কুইজ</h1>
+        </header>
 
-    <main id="main-container">
-        <!-- Home -->
-        <div id="screen-home" class="card active">
-            
-            <!-- Source Selection -->
-            <div class="section-title">বিষয়বস্তু নির্বাচন</div>
-            <div id="sheet-list" class="sheet-options">
-                <!-- Will be populated by JS -->
-                <div>লোডিং...</div>
-            </div>
+        <label class="section-label">আপনার নাম</label>
+        <input type="text" id="user-name" class="input-box" placeholder="আপনার নাম লিখুন">
 
-            <!-- Mode Selection -->
-            <div class="section-title">কুইজ মোড</div>
-            <div class="grid-options">
-                <div class="mode-select">
-                    <input type="radio" name="mode" id="m-single" value="single" checked>
-                    <label for="m-single">
-                        <div class="mode-icon">📚</div>
-                        <strong>প্র্যাকটিস</strong>
-                    </label>
-                </div>
-                <div class="mode-select">
-                    <input type="radio" name="mode" id="m-full" value="full">
-                    <label for="m-full">
-                        <div class="mode-icon">📝</div>
-                        <strong>এক্সাম</strong>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Timer Selection -->
-            <div class="section-title">সময় (অপশনাল)</div>
-            <div class="grid-options">
-                <div class="mode-select">
-                    <input type="radio" name="timer" id="t-off" value="off" checked onclick="toggleTimer(false)">
-                    <label for="t-off">সময় ছাড়া</label>
-                </div>
-                <div class="mode-select">
-                    <input type="radio" name="timer" id="t-on" value="on" onclick="toggleTimer(true)">
-                    <label for="t-on">সময় সেট</label>
-                </div>
-            </div>
-            
-            <div id="timer-box" class="timer-config">
-                <label style="display:block; margin-bottom:8px; font-size:0.9rem;">কত মিনিট?</label>
-                <input type="number" id="custom-min" class="timer-input" placeholder="উদাহরণ: ১০" min="1">
-            </div>
-
-            <button onclick="startQuiz()" class="btn" id="start-btn">কুইজ শুরু করুন</button>
+        <label class="section-label">বিষয় নির্বাচন</label>
+        <div id="sheet-list" class="grid-options" style="grid-template-columns: repeat(3, 1fr);">
+            <div style="grid-column:1/-1; text-align:center;">শীট লোড হচ্ছে...</div>
         </div>
 
-        <!-- Quiz -->
-        <div id="screen-quiz" class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                <span id="q-progress" class="q-number">প্রশ্ন ১/১০</span>
-                <span id="q-source-badge" style="font-size:0.8rem; background:#E9F7EF; padding:3px 8px; border-radius:4px; color:var(--primary-dark);"></span>
+        <label class="section-label">কুইজ মোড</label>
+        <div class="grid-options">
+            <div class="select-card">
+                <input type="radio" name="mode" id="m-single" value="single" checked>
+                <label for="m-single">
+                    <i data-lucide="book-open" style="margin-bottom:5px;"></i>
+                    <span>অনুশীলন</span>
+                </label>
             </div>
-            
-            <div id="q-container"></div>
-
-            <div class="explanation" id="explanation">
-                <strong style="color:var(--primary-dark)">ব্যাখ্যা:</strong>
-                <p id="exp-text" style="margin-top:5px; font-size:0.95rem;"></p>
-            </div>
-
-            <div style="margin-top:30px;">
-                <button id="btn-submit" class="btn" onclick="submitAnswer()">উত্তর নিশ্চিত করুন</button>
-                <button id="btn-next" class="btn btn-outline" style="display:none;" onclick="nextQuestion()">পরবর্তী প্রশ্ন</button>
-                <button id="btn-finish" class="btn" style="display:none;" onclick="finishQuiz()">ফলাফল দেখুন</button>
+            <div class="select-card">
+                <input type="radio" name="mode" id="m-full" value="full">
+                <label for="m-full">
+                    <i data-lucide="clipboard-list" style="margin-bottom:5px;"></i>
+                    <span>এক্সাম</span>
+                </label>
             </div>
         </div>
 
-        <!-- Result -->
-        <div id="screen-result" class="card">
-            <h2 style="text-align:center; color:var(--primary-dark); margin-bottom:20px;">কুইজ ফলাফল</h2>
-            <div class="result-score">
-                <span id="score-val" class="score-val">0</span>
-                <span id="score-max" class="score-max">/0</span>
+        <label class="section-label">সময় (অপশনাল)</label>
+        <div class="grid-options">
+            <div class="select-card">
+                <input type="radio" name="timer" id="t-off" value="off" checked onchange="toggleTimer(false)">
+                <label for="t-off">
+                    <i data-lucide="clock" style="margin-bottom:5px;"></i>
+                    <span>সময় ছাড়া</span>
+                </label>
             </div>
-            <p id="feedback-msg" style="text-align:center; font-size:1.2rem; font-weight:600; margin-bottom:30px;"></p>
-            <div id="review-list"></div>
-            <button onclick="location.reload()" class="btn btn-outline" style="margin-top:20px;">হোম পেজে ফিরুন</button>
+            <div class="select-card">
+                <input type="radio" name="timer" id="t-on" value="on" onchange="toggleTimer(true)">
+                <label for="t-on">
+                    <i data-lucide="timer" style="margin-bottom:5px;"></i>
+                    <span>সময় সেট</span>
+                </label>
+            </div>
+        </div>
+        <div id="timer-input-area" class="hidden" style="margin-top:10px;">
+            <input type="number" id="custom-min" class="input-box" placeholder="কত মিনিট? (যেমন: ১০)" min="1">
+        </div>
+
+        <button onclick="startQuiz()" class="btn-primary" id="start-btn">
+            শুরু করুন <i data-lucide="arrow-right"></i>
+        </button>
+    </main>
+
+    <!-- QUIZ SCREEN -->
+    <main id="screen-quiz" class="hidden">
+        <!-- Sticky Top Bar -->
+        <div class="quiz-top-bar">
+            <!-- Left: Count -->
+            <div class="top-left">
+                <span class="progress-badge" id="progress-text">১/১০</span>
+            </div>
+            
+            <!-- Center: Timer -->
+            <div class="top-center">
+                <span id="timer-display" class="timer-display">০০:০০</span>
+            </div>
+            
+            <!-- Right: End Quiz -->
+            <div class="top-right">
+                <button onclick="confirmFinish()" class="btn-finish-quiz">শেষ করুন</button>
+            </div>
+        </div>
+
+        <!-- User Info Bar -->
+        <div class="user-info-bar">
+            <i data-lucide="user" width="18"></i>
+            <span>পরীক্ষার্থী: <span id="display-name">...</span></span>
+            <span id="display-mode" class="mode-badge">অনুশীলন</span>
+        </div>
+
+        <!-- Question Area -->
+        <div class="question-container">
+            <div class="q-header">
+                <div class="q-num-circle" id="q-num">১</div>
+                <div class="q-text" id="q-text">প্রশ্ন লোড হচ্ছে...</div>
+            </div>
+
+            <div class="options-list" id="options-container">
+                <!-- Options injected here -->
+            </div>
+
+            <div class="explanation-box" id="explanation-area">
+                <h4 style="color:#92400E; margin-bottom:5px;">ব্যাখ্যা:</h4>
+                <p id="exp-text" style="color:#78350F; font-size:0.95rem;"></p>
+            </div>
+
+            <!-- Navigation / Action Button -->
+            <div class="quiz-footer-actions">
+                <button id="btn-action" class="btn-primary" onclick="handleAction()">
+                    জমা দিন <i data-lucide="send" width="16"></i>
+                </button>
+            </div>
         </div>
     </main>
 
-    <footer>
-        &copy; ২০২৬ ইসলামিক কুইজ | প্র্যাকটিস এর জন্য তৈরি
-    </footer>
+    <!-- RESULT SCREEN -->
+    <main id="screen-result" class="hidden">
+        <div id="screen-home" style="margin: 0 auto; padding: 30px;">
+            <h2 style="margin-bottom:20px; color:var(--primary-green);">ফলাফল</h2>
+            <div class="score-circle">
+                <span id="score-val" style="font-size:2.5rem; font-weight:800; color:var(--primary-green); line-height:1;">0</span>
+                <span id="score-total" style="font-size:1rem; color:#6B7280;">/ 0</span>
+            </div>
+            <p id="feedback-msg" style="font-size:1.2rem; font-weight:600; color:#374151; margin-bottom:30px;"></p>
+            
+            <button onclick="location.reload()" class="btn-primary">
+                আবার চেষ্টা করুন <i data-lucide="refresh-cw"></i>
+            </button>
+        </div>
+        
+        <div id="review-container" style="margin-top:30px; text-align:left;"></div>
+    </main>
 
     <script>
-        // --- CONFIG ---
+        lucide.createIcons();
         const SHEET_ID = '1UQkKKJ6QLJRyJqVRNyAcyKqtN1cmnbuIsGf9UtVSJyI';
         const KNOWN_SHEETS = ['বই', 'লেকচার', 'শীট']; 
 
         let questions = [];
         let curIdx = 0;
-        let score = 0;
-        let userAns = [];
+        let userAns = []; 
+        let currentSelection = []; 
         let mode = 'single';
-        let currentSheet = '';
+        let userName = "আল্লাহর বান্দা";
         let timerInterval;
-
-        // --- CORE FUNCTIONS ---
+        
         function initApp() {
-            try {
-                const container = document.getElementById('sheet-list');
-                
-                let html = '';
-                KNOWN_SHEETS.forEach((sheet, idx) => {
-                    const checked = idx === 0 ? 'checked' : '';
-                    html += `
-                    <div class="mode-select">
-                        <input type="radio" name="sheet" id="sheet-${idx}" value="${sheet}" ${checked}>
-                        <label for="sheet-${idx}">
-                            <div class="mode-icon">📚</div>
-                            <strong>${sheet}</strong>
-                        </label>
-                    </div>`;
-                });
-                container.innerHTML = html;
-                document.getElementById('custom-min').value = "";
-            } catch (e) {
-                console.error("Initialization error:", e);
-                document.getElementById('sheet-list').innerHTML = `<div style="color:red">Error initializing.</div>`;
-            }
+            const container = document.getElementById('sheet-list');
+            let html = '';
+            KNOWN_SHEETS.forEach((sheet, idx) => {
+                const checked = idx === 0 ? 'checked' : '';
+                html += `
+                <div class="select-card">
+                    <input type="radio" name="sheet" id="sheet-${idx}" value="${sheet}" ${checked}>
+                    <label for="sheet-${idx}"><strong>${sheet}</strong></label>
+                </div>`;
+            });
+            container.innerHTML = html;
         }
-
-        // Run immediately
         initApp();
 
-        // --- FETCH & PARSE ---
+        function toggleTimer(show) {
+            const area = document.getElementById('timer-input-area');
+            if(show) { area.classList.remove('hidden'); document.getElementById('custom-min').focus(); } 
+            else { area.classList.add('hidden'); }
+        }
+
         async function fetchQuestionsFromSheet(sheetName) {
-            // Updated URL to ensure all data is returned and headers are handled
             const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&headers=0`;
-            
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error("Network response was not ok");
-                const text = await response.text();
-                return parseCSV(text);
-            } catch (error) {
-                console.error("Error fetching sheet:", error);
-                return null;
-            }
+                return parseCSV(await response.text());
+            } catch (error) { console.error("Error:", error); return null; }
         }
 
-        // Simple CSV Parser to handle quotes and commas inside cells
         function parseCSV(str) {
             const arr = [];
-            let quote = false;
-            let row = [];
-            let col = '';
-            
+            let quote = false, row = [], col = '';
             for (let c = 0; c < str.length; c++) {
                 let cc = str[c], nc = str[c+1];
-                
-                if (cc === '"') {
-                    if (quote && nc === '"') { 
-                        col += '"'; 
-                        c++; 
-                    } else { 
-                        quote = !quote; 
-                    }
-                } else if (cc === ',' && !quote) {
-                    row.push(col); 
-                    col = '';
-                } else if ((cc === '\r' || cc === '\n') && !quote) {
-                    if (cc === '\r' && nc === '\n') c++; // skip CRLF
-                    row.push(col); 
-                    col = '';
-                    if (row.length > 0 && (row.length > 1 || row[0] !== '')) {
-                        arr.push(row); 
-                    }
+                if (cc === '"') { if (quote && nc === '"') { col += '"'; c++; } else { quote = !quote; } }
+                else if (cc === ',' && !quote) { row.push(col); col = ''; }
+                else if ((cc === '\r' || cc === '\n') && !quote) {
+                    if (cc === '\r' && nc === '\n') c++;
+                    row.push(col); col = '';
+                    if (row.length > 0) arr.push(row);
                     row = [];
-                } else {
-                    col += cc;
-                }
+                } else { col += cc; }
             }
-            if (col || row.length > 0) { 
-                row.push(col); 
-                arr.push(row); 
-            }
+            if (col || row.length > 0) { row.push(col); arr.push(row); }
             return arr;
         }
 
-        // Normalize Bangla Numerals to English
-        function banglaToEnglish(str) {
-            return str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+        function banglaToEnglish(str) { return str.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)); }
+        function toBanglaNum(n) { return n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]); }
+        function getBengaliLabel(index) {
+            const letters = ['ক', 'খ', 'গ', 'ঘ', 'ঙ', 'চ', 'ছ', 'জ', 'ঝ', 'ঞ'];
+            return letters[index] || (index + 1);
         }
 
         function processRawData(rows, sheetName) {
             if(!rows || rows.length === 0) return [];
-            
             return rows.map((row, i) => {
-                const q = row[0];
-                let opts = [];
-                let correctStr = "";
-                let exp = "";
-
-                // Logic: Scan from end to find Answer Column
-                // Regex matches: Digits (0-9), Bangla Digits (০-৯), Space, Comma
-                // This allows detecting the answer column even if it uses Bangla numbers
                 const ansRegex = /^[\d\s,\u09E6-\u09EF]+$/;
-
                 let correctIdx = -1;
                 for (let j = row.length - 1; j > 0; j--) {
                     const val = row[j] ? row[j].toString().trim() : "";
-                    if (val && ansRegex.test(val)) {
-                        correctIdx = j;
-                        break;
-                    }
+                    if (val && ansRegex.test(val)) { correctIdx = j; break; }
                 }
-
                 if (correctIdx === -1) return null;
 
-                // Extract Options
+                let opts = [];
                 for(let k=1; k < correctIdx; k++) {
                     const o = row[k] ? row[k].toString().trim() : "";
-                    // Filter out the sheet name if it appears in columns
                     if(o && o !== "" && o !== sheetName) opts.push(o);
                 }
 
-                // Normalize answer keys to English digits for parsing
-                correctStr = banglaToEnglish(row[correctIdx].toString());
-                exp = row[correctIdx + 1] || "";
-
-                const corr = [];
+                let correctStr = banglaToEnglish(row[correctIdx].toString());
+                let correctArr = [];
                 correctStr.split(/[, ]+/).forEach(c => {
                     const num = parseInt(c);
-                    if(!isNaN(num) && num > 0) corr.push(num - 1);
+                    if(!isNaN(num) && num > 0) correctArr.push(num - 1);
                 });
 
-                return { id: i, q, opts, correct: corr, exp };
+                return { id: i, q: row[0], opts, correct: correctArr, exp: row[correctIdx + 1] || "" };
             }).filter(x => x && x.opts.length > 0);
         }
 
-        // --- NAVIGATION ---
-        function showScreen(id) {
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            window.scrollTo(0,0);
-        }
-
-        function toggleTimer(show) {
-            document.getElementById('timer-box').classList.toggle('show', show);
-        }
-
-        // --- QUIZ LOGIC ---
         async function startQuiz() {
             const sheetRadio = document.querySelector('input[name="sheet"]:checked');
-            if(!sheetRadio) { alert("দয়া করে একটি বিষয় নির্বাচন করুন"); return; }
-            currentSheet = sheetRadio.value;
-
-            // UI Loading
-            document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('start-btn').disabled = true;
-
-            // Fetch
-            const rawRows = await fetchQuestionsFromSheet(currentSheet);
+            if(!sheetRadio) { alert("বিষয় নির্বাচন করুন"); return; }
             
-            // Process
-            questions = processRawData(rawRows, currentSheet);
+            const nameInput = document.getElementById('user-name').value.trim();
+            if(nameInput) userName = nameInput;
 
-            // Hide Loading
-            document.getElementById('loading-overlay').style.display = 'none';
-            document.getElementById('start-btn').disabled = false;
-
-            if(!questions || questions.length === 0) { 
-                alert("এই বিষয়ে কোন প্রশ্ন লোড করা যায়নি বা শীটটি ফাঁকা। ইন্টারনেট সংযোগ চেক করুন।"); 
-                return; 
-            }
-
-            // Shuffle
-            questions.sort(() => Math.random() - 0.5);
-
-            mode = document.querySelector('input[name="mode"]:checked').value;
             const timerOn = document.querySelector('input[name="timer"]:checked').value === 'on';
-            
+            let duration = 0;
             if(timerOn) {
-                const min = parseInt(document.getElementById('custom-min').value);
-                if(!min || min < 1) { alert("দয়া করে সঠিক সময় লিখুন"); return; }
-                startTimer(min * 60);
+                const val = document.getElementById('custom-min').value;
+                if(!val || val < 1) { alert("দয়া করে সঠিক সময় লিখুন"); return; }
+                duration = parseInt(val) * 60;
             }
 
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const rawRows = await fetchQuestionsFromSheet(sheetRadio.value);
+            questions = processRawData(rawRows, sheetRadio.value);
+            document.getElementById('loading-overlay').style.display = 'none';
+
+            if(!questions || questions.length === 0) { alert("প্রশ্ন লোড হয়নি।"); return; }
+            
+            questions.sort(() => Math.random() - 0.5);
+            mode = document.querySelector('input[name="mode"]:checked').value;
             curIdx = 0;
-            score = 0;
             userAns = new Array(questions.length).fill(null);
             
-            document.getElementById('main-header').style.display = 'none';
-            document.getElementById('main-container').classList.add('no-header');
-            document.getElementById('q-source-badge').innerText = currentSheet;
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            document.getElementById('display-name').innerText = userName;
+            document.getElementById('display-mode').innerText = mode === 'single' ? 'অনুশীলন' : 'এক্সাম';
 
-            showScreen('screen-quiz');
-            if(mode === 'single') renderSingle();
-            else renderFull();
+            if(timerOn && duration > 0) {
+                document.getElementById('timer-display').classList.add('active');
+                startTimer(duration);
+            } else {
+                document.getElementById('timer-display').classList.remove('active');
+            }
+            
+            renderQuestion();
         }
 
         function startTimer(seconds) {
-            const display = document.getElementById('timer-val');
-            const bar = document.getElementById('sticky-timer');
-            bar.classList.add('active');
-            
+            const display = document.getElementById('timer-display');
+            displayTimer(seconds, display);
             timerInterval = setInterval(() => {
                 seconds--;
-                const m = Math.floor(seconds / 60).toString().padStart(2,'0');
-                const s = (seconds % 60).toString().padStart(2,'0');
-                display.innerText = toBanglaNum(`${m}:${s}`);
-                
+                displayTimer(seconds, display);
                 if(seconds <= 0) {
                     clearInterval(timerInterval);
-                    alert("সময় শেষ!");
+                    alert("সময় শেষ!");
                     finishQuiz();
                 }
             }, 1000);
         }
 
-        // --- RENDERERS ---
-        function renderSingle() {
+        function displayTimer(totalSeconds, element) {
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2,'0');
+            const s = (totalSeconds % 60).toString().padStart(2,'0');
+            element.innerText = toBanglaNum(`${m}:${s}`);
+        }
+
+        function renderQuestion() {
             const q = questions[curIdx];
-            const isMulti = q.correct.length > 1;
+            currentSelection = (userAns[curIdx] && mode === 'full') ? [...userAns[curIdx]] : [];
             
-            document.getElementById('q-progress').innerText = `প্রশ্ন ${toBanglaNum(curIdx+1)} / ${toBanglaNum(questions.length)}`;
+            document.getElementById('progress-text').innerText = `${toBanglaNum(curIdx + 1)}/${toBanglaNum(questions.length)}`;
+            document.getElementById('q-num').innerText = toBanglaNum(curIdx + 1);
+            document.getElementById('q-text').innerText = q.q;
+            document.getElementById('explanation-area').style.display = 'none';
             
-            let html = `<div class="q-text">${q.q}</div>
-                        <div style="font-size:0.9rem; color:#777; margin-bottom:10px; font-style:italic;">
-                            ${isMulti ? "নোট: একাধিক উত্তর সঠিক হতে পারে" : ""}
-                        </div>
-                        <div class="option-group">`;
+            // Reset Button State
+            const btn = document.getElementById('btn-action');
+            btn.innerHTML = 'জমা দিন <i data-lucide="send" width="16"></i>';
+            btn.classList.remove('hidden');
             
-            q.opts.forEach((opt, i) => {
-                html += `
-                <div class="option-btn ${isMulti?'multi':''}" id="opt-${i}" onclick="selectOption(${i}, ${isMulti})">
-                    <div class="option-circle"></div>
-                    <span>${opt}</span>
-                </div>`;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.opts.forEach((opt, idx) => {
+                const div = document.createElement('div');
+                div.className = 'option-card';
+                div.id = `opt-${idx}`;
+                div.onclick = () => toggleSelection(idx);
+                if(currentSelection.includes(idx)) div.classList.add('selected');
+
+                div.innerHTML = `
+                    <div class="option-label-box">${getBengaliLabel(idx)}</div>
+                    <div class="option-text">${opt}</div>
+                    <div class="option-checkbox">
+                        ${currentSelection.includes(idx) ? '<i data-lucide="check" width="16"></i>' : ''}
+                    </div>
+                `;
+                container.appendChild(div);
             });
-            html += `</div>`;
+            lucide.createIcons();
             
-            document.getElementById('q-container').innerHTML = html;
-            document.getElementById('explanation').style.display = 'none';
-            
-            document.getElementById('btn-submit').style.display = 'block';
-            document.getElementById('btn-next').style.display = 'none';
-            document.getElementById('btn-finish').style.display = 'none';
-        }
-
-        function renderFull() {
-            document.getElementById('q-progress').innerText = `মোট প্রশ্ন: ${toBanglaNum(questions.length)}`;
-            document.getElementById('btn-submit').innerText = "কুইজ জমা দিন";
-            document.getElementById('btn-next').style.display = 'none';
-
-            let html = '';
-            questions.forEach((q, idx) => {
-                const isMulti = q.correct.length > 1;
-                html += `<div style="margin-bottom:30px; border-bottom:1px solid #eee; padding-bottom:20px;">
-                    <div class="q-number">প্রশ্ন ${toBanglaNum(idx+1)}</div>
-                    <div class="q-text" style="font-size:1.2rem; margin-bottom:10px;">${q.q}</div>
-                    <div class="option-group">`;
-                
-                q.opts.forEach((opt, i) => {
-                    html += `
-                    <div class="option-btn ${isMulti?'multi':''}" id="q${idx}-opt${i}" onclick="selectOptionFull(${idx}, ${i}, ${isMulti})">
-                        <div class="option-circle"></div>
-                        <span>${opt}</span>
-                    </div>`;
-                });
-                html += `</div></div>`;
-            });
-            document.getElementById('q-container').innerHTML = html;
-        }
-
-        // --- INTERACTIONS ---
-        let currentSelection = [];
-        
-        function selectOption(idx, isMulti) {
-            if(document.getElementById('btn-submit').style.display === 'none') return;
-
-            if(isMulti) {
-                if(currentSelection.includes(idx)) currentSelection = currentSelection.filter(i=>i!==idx);
-                else currentSelection.push(idx);
-            } else {
-                currentSelection = [idx];
+            // In Practice Mode, if answered, show feedback
+            if(mode === 'single' && userAns[curIdx]) {
+                 // Restore feedback state if revisiting? 
+                 // (Simple version: reset unless we want complex history. For now reset.)
+                 // If we want to prevent re-answering in practice mode, we check userAns[curIdx].
             }
-            updateUISelection();
         }
 
-        function updateUISelection() {
-            document.querySelectorAll('.option-btn').forEach((el, i) => {
-                const idx = parseInt(el.id.split('-')[1]);
-                if(currentSelection.includes(idx)) el.classList.add('selected');
-                else el.classList.remove('selected');
-            });
-        }
-
-        function selectOptionFull(qIdx, oIdx, isMulti) {
-            let ans = userAns[qIdx] || [];
-            if(isMulti) {
-                if(ans.includes(oIdx)) ans = ans.filter(i=>i!==oIdx);
-                else ans.push(oIdx);
-            } else {
-                ans = [oIdx];
-            }
-            userAns[qIdx] = ans;
+        function toggleSelection(idx) {
+            // Prevent changing answer in Practice Mode if explanation is already shown
+            if(mode === 'single' && document.getElementById('explanation-area').style.display === 'block') return;
             
-            const parent = document.getElementById(`q${qIdx}-opt${oIdx}`).parentNode;
-            Array.from(parent.children).forEach((el, i) => {
-                if(ans.includes(i)) el.classList.add('selected');
-                else el.classList.remove('selected');
-            });
+            const card = document.getElementById(`opt-${idx}`);
+            if(currentSelection.includes(idx)) {
+                currentSelection = currentSelection.filter(i => i !== idx);
+                card.classList.remove('selected');
+                card.querySelector('.option-checkbox').innerHTML = '';
+            } else {
+                currentSelection.push(idx);
+                card.classList.add('selected');
+                card.querySelector('.option-checkbox').innerHTML = '<i data-lucide="check" width="16"></i>';
+            }
+            lucide.createIcons();
         }
 
-        // --- SUBMIT ---
-        function submitAnswer() {
-            if(mode === 'full') {
-                if(confirm("আপনি কি নিশ্চিত যে আপনি কুইজ জমা দিতে চান?")) {
-                    finishQuiz();
+        function handleAction() {
+            const btn = document.getElementById('btn-action');
+            
+            // Scenario 1: Practice Mode - Submit to Check Answer
+            if(mode === 'single') {
+                if(btn.innerText.includes('পরবর্তী')) { // "Next" state
+                    nextQuestion();
+                } else {
+                    if(currentSelection.length === 0) return;
+                    userAns[curIdx] = [...currentSelection];
+                    showFeedback();
+                    btn.innerHTML = (curIdx === questions.length - 1) ? 
+                        'ফলাফল দেখুন <i data-lucide="bar-chart-2" width="16"></i>' : 
+                        'পরবর্তী <i data-lucide="arrow-right" width="16"></i>';
+                    lucide.createIcons();
                 }
-                return;
+            } 
+            // Scenario 2: Exam Mode - Submit to Save and Next
+            else {
+                if(currentSelection.length > 0) userAns[curIdx] = [...currentSelection];
+                // In exam, we just go next regardless of selection (allow skip? Logic says yes)
+                nextQuestion();
             }
+        }
 
-            if(currentSelection.length === 0) return;
-            
+        function showFeedback() {
             const q = questions[curIdx];
-            userAns[curIdx] = [...currentSelection];
-            
-            q.opts.forEach((_, i) => {
-                const el = document.getElementById(`opt-${i}`);
-                el.classList.remove('selected');
-                if(q.correct.includes(i)) el.classList.add('correct');
-                else if(currentSelection.includes(i)) el.classList.add('wrong');
+            // Highlight Cards
+            q.opts.forEach((_, idx) => {
+                const card = document.getElementById(`opt-${idx}`);
+                card.classList.remove('selected'); 
+                if(q.correct.includes(idx)) card.classList.add('correct-answer');
+                else if(currentSelection.includes(idx)) card.classList.add('wrong-answer');
             });
-
-            document.getElementById('exp-text').innerText = q.exp || "কোন ব্যাখ্যা নেই।";
-            document.getElementById('explanation').style.display = 'block';
-
-            document.getElementById('btn-submit').style.display = 'none';
-            if(curIdx < questions.length - 1) {
-                document.getElementById('btn-next').style.display = 'block';
-            } else {
-                document.getElementById('btn-finish').style.display = 'block';
+            if(q.exp) {
+                document.getElementById('exp-text').innerText = q.exp;
+                document.getElementById('explanation-area').style.display = 'block';
             }
-            
-            currentSelection = [];
         }
 
         function nextQuestion() {
-            curIdx++;
-            renderSingle();
+            if(curIdx < questions.length - 1) {
+                curIdx++;
+                renderQuestion();
+            } else {
+                if(confirm("আপনি কি কুইজ শেষ করতে চান?")) finishQuiz();
+            }
+        }
+        
+        function confirmFinish() {
+            if(confirm("আপনি কি এখনই কুইজ শেষ করতে চান? বাকি প্রশ্নগুলো স্কিপ করা হবে।")) {
+                finishQuiz();
+            }
         }
 
         function finishQuiz() {
             clearInterval(timerInterval);
-            document.getElementById('sticky-timer').classList.remove('active');
-            document.getElementById('main-header').style.display = 'block'; 
-            document.getElementById('main-container').classList.remove('no-header');
-            
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
             score = 0;
+            let reviewHtml = '';
+
             questions.forEach((q, i) => {
-                const u = (userAns[i] || []).sort().toString();
-                const c = q.correct.sort().toString();
-                if(u === c) score++;
+                const u = (userAns[i] || []).sort();
+                const c = [...q.correct].sort();
+                const isCorrect = JSON.stringify(u) === JSON.stringify(c);
+                if(isCorrect) score++;
+
+                const uText = u.map(idx => q.opts[idx]).join(", ");
+                const cText = c.map(idx => q.opts[idx]).join(", ");
+
+                reviewHtml += `
+                <div style="background:white; padding:15px; border-radius:10px; margin-bottom:15px; border-left:4px solid ${isCorrect ? 'var(--primary-green)' : '#EF4444'}; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="font-weight:700; color:#1F2937; margin-bottom:8px;">${toBanglaNum(i+1)}. ${q.q}</div>
+                    <div style="font-size:0.9rem; color:${isCorrect ? 'green' : 'red'}; margin-bottom:5px;">
+                        ${isCorrect ? 'সঠিক উত্তর' : `আপনার উত্তর: ${uText || 'ফাঁকা'}`}
+                    </div>
+                    ${!isCorrect ? `<div style="font-size:0.9rem; color:green; font-weight:600;">সঠিক উত্তর: ${cText}</div>` : ''}
+                    ${q.exp ? `<div style="margin-top:8px; font-size:0.85rem; background:#FFFBEB; padding:8px; border-radius:6px;">${q.exp}</div>` : ''}
+                </div>`;
             });
 
-            showScreen('screen-result');
             document.getElementById('score-val').innerText = toBanglaNum(score);
-            document.getElementById('score-max').innerText = "/" + toBanglaNum(questions.length);
+            document.getElementById('score-total').innerText = "/ " + toBanglaNum(questions.length);
             
             const pct = (score / questions.length) * 100;
             let msg = "";
@@ -867,33 +858,8 @@
             else if(pct >= 50) msg = "আলহামদুলিল্লাহ, ভালো প্রচেষ্টা";
             else msg = "আরও পড়াশোনা করা প্রয়োজন";
             document.getElementById('feedback-msg').innerText = msg;
-
-            let revHtml = "";
-            questions.forEach((q, i) => {
-                const u = userAns[i] || [];
-                const isCorr = JSON.stringify(u.sort()) === JSON.stringify(q.correct.sort());
-                const uText = u.map(idx => q.opts[idx]).join(", ");
-                const cText = q.correct.map(idx => q.opts[idx]).join(", ");
-                
-                revHtml += `
-                <div class="review-card">
-                    <div style="font-weight:bold; margin-bottom:5px; color:#145A32;">${toBanglaNum(i+1)}. ${q.q}</div>
-                    <div style="font-size:0.9rem;">
-                        ${isCorr ? 
-                            `<span style="color:green; font-weight:bold;">✔ সঠিক</span>` : 
-                            `<span style="color:#C0392B; font-weight:bold;">✘ ভুল (আপনার উত্তর: ${uText||'ফাঁকা'})</span>`
-                        }
-                    </div>
-                    <div style="font-size:0.9rem; color:#555; margin-top:5px;">সঠিক উত্তর: <b>${cText}</b></div>
-                    <div style="background:#F4F8F5; padding:8px; margin-top:5px; font-size:0.85rem; border-radius:4px;">${q.exp}</div>
-                </div>`;
-            });
-            document.getElementById('review-list').innerHTML = revHtml;
-        }
-
-        // --- UTILS ---
-        function toBanglaNum(n) {
-            return n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+            
+            document.getElementById('review-container').innerHTML = reviewHtml;
         }
     </script>
 </body>
